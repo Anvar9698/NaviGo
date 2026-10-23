@@ -1,0 +1,26 @@
+{
+  "name": "yol-malumoti",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Yol Ma'lumoti — Road information and accessible navigation platform for Uzbekistan",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "keywords": [
+    "road-information",
+    "accessibility",
+    "maplibre",
+    "uzbekistan",
+    "tashkent",
+    "weather",
+    "air-quality"
+  ],
+  "author": "Yol Ma'lumoti Team",
+  "license": "MIT"
+}

@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --text-scale: 1;
+  --font-base: 18px;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: calc(var(--font-base) * var(--text-scale));
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+  background-color: #E7E4EA;
+  color: #151218;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Dark Mode Overrides */
+.dark body {
+  background-color: #0E0C10;
+  color: #FFFFFF;
+}
+
+/* High Contrast Mode Overrides (Strictly WCAG AAA black/white/yellow) */
+.high-contrast {
+  --font-base: 20px;
+}
+.high-contrast body {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+.high-contrast * {
+  border-color: #FFFFFF !important;
+}
+.high-contrast button:focus-visible,
+.high-contrast a:focus-visible,
+.high-contrast input:focus-visible {
+  outline: 4px solid #FFD700 !important;
+  outline-offset: 3px !important;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Custom Soft Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9D6DD;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #3A3542;
+}
+
+/* Large Accessible Touch Targets (Part 4.4) */
+button, a, input, select {
+  min-height: 48px;
+}
