@@ -15,6 +15,7 @@ import { EditorWorkspace } from './components/EditorWorkspace';
 import { AnalystWorkspace } from './components/AnalystWorkspace';
 import { SettingsModal } from './components/SettingsModal';
 import { ListAlternativeModal } from './components/ListAlternativeModal';
+import { NotificationsModal } from './components/NotificationsModal';
 
 export const MainLayout: React.FC = () => {
   return (
@@ -52,6 +53,7 @@ export const MainLayout: React.FC = () => {
         <AnalystWorkspace />
         <SettingsModal />
         <ListAlternativeModal />
+        <NotificationsModal />
       </div>
     </div>
   );

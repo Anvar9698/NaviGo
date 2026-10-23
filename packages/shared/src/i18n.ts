@@ -16,19 +16,32 @@ export const TRANSLATIONS = {
     topBar: {
       searchPlaceholder: "Qayerga bormoqchisiz?",
       voiceSearch: "Ovoz bilan qidirish",
+      voiceNotSupported: "Bu brauzerda ovozli qidiruv qo'llab-quvvatlanmaydi. Manzilni yozib kiriting.",
       notifications: "Bildirishnomalar",
+      notificationsTitle: "Bildirishnomalar va Ogohlantirishlar",
+      noNotifications: "Yangi bildirishnomalar yo'q",
+      markAllRead: "Barchasini o'qilgan deb belgilash",
       account: "Hisob",
       login: "Kirish",
-      logout: "Chiqish"
+      logout: "Chiqish",
+      profile: "Foydalanuvchi profili"
+    },
+    dock: {
+      day: "Kunduzgi",
+      night: "Tungi",
+      contrast: "Kontrast",
+      help: "Yordam",
+      exit: "Chiqish",
+      login: "Kirish"
     },
     weather: {
       title: "Ob-havo va havo sifati",
       now: "Hozir",
       forecast: "5 kunlik ob-havo",
       airQuality: "Havo sifati",
-      airGood: "Havo: Yaxshi",
-      airModerate: "Havo: O'rtacha",
-      airUnhealthy: "Havo: Nosog'lom",
+      airGood: "Toza havo",
+      airModerate: "O'rtacha toza",
+      airUnhealthy: "Nosog'lom havo",
       updatedMinutesAgo: "daqiqa oldin yangilandi",
       sourceAttribution: "Ma'lumot manbasi: Open-Meteo",
       wind: "Shamol",
@@ -42,11 +55,13 @@ export const TRANSLATIONS = {
       sourceLive: "Jonli",
       sourceCommunity: "Aholi xabari",
       sourceOfficial: "Rasmiy",
+      all: "Barchasi",
       accidents: "Avtohalokatlar",
       traffic: "Tirbandlik",
       roadWork: "Yo'l ta'miri",
       closures: "Yopiq yo'llar",
-      publicTransport: "Avtobus va metro"
+      publicTransport: "Avtobus va metro",
+      verifiedTimeAgo: "Tekshirildi"
     },
     map: {
       myLocation: "Mening joyim",
@@ -58,7 +73,10 @@ export const TRANSLATIONS = {
       modeA: "Muhit va ob-havo",
       modeB: "Yo'llar va transport",
       modeCombined: "Umumiy ko'rinish",
-      listAlternative: "Ro'yxat shaklida ko'rish"
+      listAlternative: "Ro'yxat shaklida ko'rish",
+      sourceLabel: "Manba",
+      verifiedAt: "Tekshirilgan vaqt",
+      yourReport: "Sizning xabaringiz"
     },
     report: {
       title: "Muammo haqida xabar berish",
@@ -76,23 +94,98 @@ export const TRANSLATIONS = {
         map_error: "Xaritadagi xatolik",
         other: "Boshqa muammo"
       },
-      confirmLocation: "Belgi to'g'ri joyda joylashganmi?",
+      confirmLocation: "Joylashuvni tanlang (xaritada siljiting)",
+      dragPinInstruction: "Xaritani siljitib yoki qidiruv orqali nuqtani belgilang",
+      searchAddressPlaceholder: "Ko'cha yoki mo'ljalni qidiring (masalan: Chilonzor, Chorsu)...",
+      useMyGps: "Mening hozirgi joyimdan olish",
+      locationSelected: "Tanlangan nuqta",
+      addTitle: "Sarlavha",
+      addTitlePlaceholder: "Masalan: Beruniy metrosi oldidagi chuqur",
       addPhoto: "Fotosurat biriktirish (ixtiyoriy)",
-      addNote: "Qisqacha izoh yozing yoki ayting",
+      photoPrivacyNote: "Suratdagi yashirin GPS va EXIF ma'lumotlari avtomatik o'chiriladi",
+      addNote: "Qisqacha izoh yozing yoki ovoz bilan ayting",
+      addNotePlaceholder: "Xavf darajasi yoki qaysi qatorda ekanligini yozing...",
+      urgencyLevel: "Shoshilinchlik darajasi",
+      urgencies: {
+        low: "Past",
+        medium: "O'rtacha",
+        high: "Yuqori",
+        urgent: "Shoshilinch"
+      },
+      reviewSummary: "Xabar ma'lumotlarini tekshiring",
+      categoryLabel: "Kategoriya",
+      coordinatesLabel: "Koordinatalar",
+      signInRequiredNotice: "Xabar yuborish va uning holatini kuzatish uchun hisobga kirishingiz kerak",
+      signInOrRegister: "Kirish yoki Ro'yxatdan o'tish",
       submitButton: "Xabarni yuborish",
       successTitle: "Rahmat! Xabaringiz qabul qilindi.",
       successDesc: "Mutaxassislarimiz tez orada xabaringizni tekshirib, xaritaga kiritadi.",
       trackStatus: "Holatni kuzatish"
     },
+    myReports: {
+      title: "Mening xabarlarim",
+      subtitle: "Yuborilgan xabarlaringiz holatini va xaritadagi o'rnini kuzating",
+      signInRequired: "Tizimga kirish talab etiladi",
+      signInPrompt: "Yuborgan xabarlaringizni ko'rish va kuzatish uchun fuqaro hisobingizga kiring.",
+      noReports: "Siz hali birorta xabar yubormagansiz.",
+      viewOnMap: "Xaritada ko'rish",
+      editorFeedback: "Tahririyat javobi",
+      noDetails: "Qo'shimcha izoh berilmagan.",
+      statuses: {
+        SUBMITTED: "Yuborildi",
+        UNDER_REVIEW: "Tekshirilmoqda",
+        PUBLISHED: "Xaritaga kiritildi",
+        REJECTED: "Rad etildi"
+      }
+    },
+    legend: {
+      title: "Bu belgilar nimani anglatadi?",
+      roadHazardsTitle: "Yo'l belgilari va hodisalar",
+      accidentTitle: "Avtohalokat / To'qnashuv",
+      accidentDesc: "Harakatlanish bo'laklaridan birini to'sib qo'ygan transport hodisasi.",
+      trafficTitle: "Tirbandlik",
+      trafficDesc: "Harakat tezligi soatiga 15 km dan pastga tushib ketgan tirband yo'llar.",
+      roadWorkTitle: "Yo'l ta'miri",
+      roadWorkDesc: "Asfalt yotqizish yoki yerosti kommunikatsiya quvurlarini ta'mirlash.",
+      closureTitle: "Yopiq yo'l",
+      closureDesc: "Transport vositalari harakati butunlay to'xtatilgan ko'cha qismi.",
+      sourceTitle: "Ma'lumot ishonchliligi (Manba belgilari)",
+      sourceLiveTitle: "Jonli",
+      sourceLiveDesc: "Haqiqiy vaqt rejimida olingan yoki patrul tasdiqlagan ma'lumot.",
+      sourceCommunityTitle: "Aholi xabari",
+      sourceCommunityDesc: "Fuqaro yuborgan va muharrir tomonidan tekshirilgan ma'lumot.",
+      sourceOfficialTitle: "Rasmiy",
+      sourceOfficialDesc: "Yo'l harakati xavfsizligi yoki shahar hokimiyati xizmati tomonidan tasdiqlangan."
+    },
     accessibility: {
       title: "Qulaylik sozlamalari",
+      subtitle: "Ko'rish qulayligi, kattalar uchun sozlamalar va maxfiylik",
       textSize: "Matn o'lchami",
+      textSizeStandard: "Odatiy (100%)",
+      textSizeSenior: "Kattalar uchun (140%)",
       theme: "Rang mavzusi",
       themeLight: "Yorug' (Odatiy)",
       themeDark: "Qorong'i",
       themeHighContrast: "Yuqori kontrast (Kattalar uchun)",
       reduceMotion: "Harakatlarni kamaytirish",
+      reduceMotionDesc: "Animatsiyalar va sahifa siljishlarini o'chiradi",
+      privacyTitle: "Joylashuv va maxfiylik nazorati",
+      privacyDesc: "Yo'l Ma'lumoti faqat dastur ochiq bo'lgandagina joylashuvdan foydalanadi. Biz sizning harakatlanish tarixingizni saqlamaymiz.",
+      exportData: "Ma'lumotlarimni yuklab olish",
+      deleteAccount: "Hisobimni o'chirish",
       voiceSpeed: "Ovoz tezligi"
+    },
+    support: {
+      title: "Sun'iy intellekt yo'l yordamchisi",
+      subtitle: "Faqat tasdiqlangan ma'lumotlar • Xodim bilan bog'lanish imkoniyati",
+      needPerson: "Navbatchi mutaxassis bilan gaplashmoqchimisiz?",
+      talkToPerson: "Xodim bilan bog'lanish",
+      inputPlaceholder: "Savolingizni yozing...",
+      roles: {
+        ai: "AI Yordamchi",
+        staff: "Dispetcher",
+        citizen: "Siz"
+      }
     },
     common: {
       loading: "Yuklanmoqda...",
@@ -101,7 +194,8 @@ export const TRANSLATIONS = {
       close: "Yopish",
       back: "Orqaga",
       next: "Keyingisi",
-      save: "Saqlash"
+      save: "Saqlash",
+      cancel: "Bekor qilish"
     }
   },
 
@@ -120,19 +214,32 @@ export const TRANSLATIONS = {
     topBar: {
       searchPlaceholder: "Куда вы хотите поехать?",
       voiceSearch: "Голосовой поиск",
+      voiceNotSupported: "Голосовой ввод не поддерживается в этом браузере. Пожалуйста, введите адрес текстом.",
       notifications: "Уведомления",
+      notificationsTitle: "Уведомления и оповещения",
+      noNotifications: "Новых уведомлений нет",
+      markAllRead: "Отметить все как прочитанные",
       account: "Аккаунт",
       login: "Войти",
-      logout: "Выйти"
+      logout: "Выйти",
+      profile: "Профиль пользователя"
+    },
+    dock: {
+      day: "День",
+      night: "Ночь",
+      contrast: "Контраст",
+      help: "Помощь",
+      exit: "Выход",
+      login: "Вход"
     },
     weather: {
       title: "Погода и воздух",
       now: "Сейчас",
       forecast: "Прогноз на 5 дней",
       airQuality: "Качество воздуха",
-      airGood: "Воздух: Чистый",
-      airModerate: "Воздух: Умеренный",
-      airUnhealthy: "Воздух: Неблагоприятный",
+      airGood: "Чистый воздух",
+      airModerate: "Умеренно чистый",
+      airUnhealthy: "Неблагоприятный воздух",
       updatedMinutesAgo: "мин. назад",
       sourceAttribution: "Источник: Open-Meteo",
       wind: "Ветер",
@@ -146,11 +253,13 @@ export const TRANSLATIONS = {
       sourceLive: "В реальном времени",
       sourceCommunity: "От жителей",
       sourceOfficial: "Официально",
+      all: "Все",
       accidents: "ДТП",
       traffic: "Пробки",
       roadWork: "Дорожные работы",
       closures: "Перекрытия",
-      publicTransport: "Транспорт"
+      publicTransport: "Транспорт",
+      verifiedTimeAgo: "Проверено"
     },
     map: {
       myLocation: "Моё местоположение",
@@ -162,7 +271,10 @@ export const TRANSLATIONS = {
       modeA: "Среда и погода",
       modeB: "Дороги и транспорт",
       modeCombined: "Общий вид",
-      listAlternative: "В виде списка"
+      listAlternative: "В виде списка",
+      sourceLabel: "Источник",
+      verifiedAt: "Время проверки",
+      yourReport: "Ваше сообщение"
     },
     report: {
       title: "Сообщить о проблеме на дороге",
@@ -180,23 +292,98 @@ export const TRANSLATIONS = {
         map_error: "Неточность на карте",
         other: "Другая проблема"
       },
-      confirmLocation: "Точка на карте верна?",
+      confirmLocation: "Укажите место (переместите точку на карте)",
+      dragPinInstruction: "Перемещайте карту или воспользуйтесь поиском адреса",
+      searchAddressPlaceholder: "Поиск улицы или ориентира (например: Чиланзар, Чорсу)...",
+      useMyGps: "Использовать моё текущее GPS",
+      locationSelected: "Выбранная точка",
+      addTitle: "Заголовок",
+      addTitlePlaceholder: "Например: Глубокая яма возле съезда метро",
       addPhoto: "Прикрепить фото (по желанию)",
+      photoPrivacyNote: "Скрытые данные EXIF и GPS будут автоматически удалены из фото",
       addNote: "Короткий комментарий (голосом или текстом)",
+      addNotePlaceholder: "Опишите подробности или опасные полосы...",
+      urgencyLevel: "Срочность",
+      urgencies: {
+        low: "Низкая",
+        medium: "Средняя",
+        high: "Высокая",
+        urgent: "Срочно"
+      },
+      reviewSummary: "Проверьте данные перед отправкой",
+      categoryLabel: "Категория",
+      coordinatesLabel: "Координаты",
+      signInRequiredNotice: "Для отправки и отслеживания сообщений необходимо войти в аккаунт",
+      signInOrRegister: "Войти или Зарегистрироваться",
       submitButton: "Отправить сообщение",
       successTitle: "Спасибо! Сообщение принято.",
       successDesc: "Наши редакторы проверят его и обновят карту.",
       trackStatus: "Отследить статус"
     },
+    myReports: {
+      title: "Мои сообщения",
+      subtitle: "Отслеживайте статус проверки ваших сообщений и их место на карте",
+      signInRequired: "Требуется авторизация",
+      signInPrompt: "Войдите в аккаунт жителя, чтобы просматривать отправленные отчеты.",
+      noReports: "Вы пока не отправляли сообщений о происшествиях.",
+      viewOnMap: "Показать на карте",
+      editorFeedback: "Ответ редакции",
+      noDetails: "Дополнительные детали не указаны.",
+      statuses: {
+        SUBMITTED: "Отправлено",
+        UNDER_REVIEW: "На проверке",
+        PUBLISHED: "Опубликовано на карте",
+        REJECTED: "Отклонено"
+      }
+    },
+    legend: {
+      title: "Что значат эти знаки?",
+      roadHazardsTitle: "Дорожные предупреждения",
+      accidentTitle: "ДТП / Столкновение",
+      accidentDesc: "Авария, блокирующая одну или несколько полос движения.",
+      trafficTitle: "Пробка / Затор",
+      trafficDesc: "Движение со скоростью ниже 15 км/ч.",
+      roadWorkTitle: "Дорожные работы",
+      roadWorkDesc: "Укладка асфальта или ремонт подземных коммуникаций.",
+      closureTitle: "Перекрытие дороги",
+      closureDesc: "Участок полностью закрыт для проезда. Действует объезд.",
+      sourceTitle: "Происхождение данных (Источники)",
+      sourceLiveTitle: "В реальном времени",
+      sourceLiveDesc: "Данные от датчиков или подтвержденные патрулем.",
+      sourceCommunityTitle: "От жителей",
+      sourceCommunityDesc: "Отправлено гражданином и проверено редактором.",
+      sourceOfficialTitle: "Официально",
+      sourceOfficialDesc: "Подтверждено городскими службами или УБДД."
+    },
     accessibility: {
       title: "Настройки доступности",
+      subtitle: "Комфорт зрения, настройки для пожилых людей и приватность",
       textSize: "Размер текста",
+      textSizeStandard: "Стандартный (100%)",
+      textSizeSenior: "Для пожилых (140%)",
       theme: "Цветовая тема",
       themeLight: "Светлая",
       themeDark: "Тёмная",
       themeHighContrast: "Высокая контрастность (для пожилых)",
       reduceMotion: "Уменьшить анимацию",
+      reduceMotionDesc: "Отключает лишние переходы и эффекты движения",
+      privacyTitle: "Геолокация и приватность",
+      privacyDesc: "Йўл Маълумоти запрашивает геопозицию только при открытом приложении. Мы не отслеживаем перемещения в фоновом режиме.",
+      exportData: "Скачать мои данные",
+      deleteAccount: "Удалить мой аккаунт",
       voiceSpeed: "Скорость озвучивания"
+    },
+    support: {
+      title: "ИИ-помощник дорожной службы",
+      subtitle: "Только проверенные данные • Связь с диспетчером",
+      needPerson: "Нужно связаться с дежурным диспетчером?",
+      talkToPerson: "Поговорить с человеком",
+      inputPlaceholder: "Введите ваш вопрос...",
+      roles: {
+        ai: "ИИ-помощник",
+        staff: "Диспетчер",
+        citizen: "Вы"
+      }
     },
     common: {
       loading: "Загрузка...",
@@ -205,7 +392,8 @@ export const TRANSLATIONS = {
       close: "Закрыть",
       back: "Назад",
       next: "Далее",
-      save: "Сохранить"
+      save: "Сохранить",
+      cancel: "Отмена"
     }
   },
 
@@ -224,19 +412,32 @@ export const TRANSLATIONS = {
     topBar: {
       searchPlaceholder: "Where do you want to go?",
       voiceSearch: "Voice search",
+      voiceNotSupported: "Voice search is not supported in this browser. Please type the address.",
       notifications: "Notifications",
+      notificationsTitle: "Notifications & Alerts",
+      noNotifications: "No new notifications",
+      markAllRead: "Mark all as read",
       account: "Account",
       login: "Sign In",
-      logout: "Log out"
+      logout: "Log out",
+      profile: "User profile"
+    },
+    dock: {
+      day: "Day",
+      night: "Night",
+      contrast: "Contrast",
+      help: "Help",
+      exit: "Exit",
+      login: "Login"
     },
     weather: {
       title: "Weather & Air",
       now: "Now",
       forecast: "5-day forecast",
       airQuality: "Air Quality",
-      airGood: "Air: Good",
-      airModerate: "Air: Moderate",
-      airUnhealthy: "Air: Unhealthy",
+      airGood: "Good Air",
+      airModerate: "Moderate Air",
+      airUnhealthy: "Unhealthy Air",
       updatedMinutesAgo: "min ago",
       sourceAttribution: "Source: Open-Meteo",
       wind: "Wind",
@@ -250,11 +451,13 @@ export const TRANSLATIONS = {
       sourceLive: "Live",
       sourceCommunity: "Reported by people",
       sourceOfficial: "Official",
+      all: "All",
       accidents: "Accidents",
       traffic: "Traffic jams",
       roadWork: "Road work",
       closures: "Road closures",
-      publicTransport: "Bus & Tram"
+      publicTransport: "Bus & Tram",
+      verifiedTimeAgo: "Verified"
     },
     map: {
       myLocation: "My location",
@@ -266,12 +469,15 @@ export const TRANSLATIONS = {
       modeA: "Environment & weather",
       modeB: "Roads & transport",
       modeCombined: "Combined view",
-      listAlternative: "Switch to list view"
+      listAlternative: "Switch to list view",
+      sourceLabel: "Source",
+      verifiedAt: "Verified time",
+      yourReport: "Your report"
     },
     report: {
       title: "Report a road problem",
       step1Title: "Step 1: Choose category",
-      step2Title: "Step 2: Confirm place & optional photo",
+      step2Title: "Step 2: Place & optional photo",
       step3Title: "Step 3: Review & Submit",
       safetyWarning: "Please do not take photos while driving or walking in hazardous traffic!",
       categories: {
@@ -284,23 +490,98 @@ export const TRANSLATIONS = {
         map_error: "Incorrect map info",
         other: "Other travel issue"
       },
-      confirmLocation: "Is this the right place?",
+      confirmLocation: "Select location (drag pin on map)",
+      dragPinInstruction: "Drag map or search address to reposition the pin",
+      searchAddressPlaceholder: "Search street or landmark (e.g. Chilonzor, Chorsu)...",
+      useMyGps: "Use my current GPS",
+      locationSelected: "Selected coordinate",
+      addTitle: "Title",
+      addTitlePlaceholder: "e.g. Deep pothole near right curb",
       addPhoto: "Attach a photo (optional)",
+      photoPrivacyNote: "Hidden EXIF and GPS metadata will be automatically stripped",
       addNote: "Add a note or speak",
+      addNotePlaceholder: "Describe any safety risks or affected lanes...",
+      urgencyLevel: "Urgency level",
+      urgencies: {
+        low: "Low",
+        medium: "Medium",
+        high: "High",
+        urgent: "Urgent"
+      },
+      reviewSummary: "Review your report details",
+      categoryLabel: "Category",
+      coordinatesLabel: "Coordinates",
+      signInRequiredNotice: "You must sign in to submit and track reports",
+      signInOrRegister: "Sign In or Register",
       submitButton: "Send report",
       successTitle: "Thank you! We will check your report.",
       successDesc: "Our editorial team will review and publish the update shortly.",
       trackStatus: "Track report status"
     },
+    myReports: {
+      title: "My reports",
+      subtitle: "Track verification progress and find your submissions on the map",
+      signInRequired: "Sign in required",
+      signInPrompt: "Please sign in with your citizen account to view and track your reports.",
+      noReports: "You have not submitted any reports yet.",
+      viewOnMap: "View on map",
+      editorFeedback: "Editorial feedback",
+      noDetails: "No additional details provided.",
+      statuses: {
+        SUBMITTED: "Submitted",
+        UNDER_REVIEW: "Under Review",
+        PUBLISHED: "Published to Map",
+        REJECTED: "Rejected"
+      }
+    },
+    legend: {
+      title: "What do these mean?",
+      roadHazardsTitle: "Road Hazard Markers",
+      accidentTitle: "Accident / Collision",
+      accidentDesc: "Vehicle collision blocking one or more traffic lanes.",
+      trafficTitle: "Traffic Jam / Congestion",
+      trafficDesc: "Heavy congestion where travel speeds drop below 15 km/h.",
+      roadWorkTitle: "Road Work / Repairs",
+      roadWorkDesc: "Asphalt paving or underground municipal utility maintenance.",
+      closureTitle: "Road Closure",
+      closureDesc: "Section completely closed to vehicular transit. Detour active.",
+      sourceTitle: "Information Provenance (Source Badges)",
+      sourceLiveTitle: "Live",
+      sourceLiveDesc: "Real-time telematics or verified patrol observation.",
+      sourceCommunityTitle: "Reported by people",
+      sourceCommunityDesc: "Submitted by a citizen and verified by an editorial reviewer.",
+      sourceOfficialTitle: "Official",
+      sourceOfficialDesc: "Issued by the Tashkent City Road Authority or Emergency Services."
+    },
     accessibility: {
       title: "Accessibility settings",
+      subtitle: "Visual comfort, older adult accessibility & privacy",
       textSize: "Text size",
+      textSizeStandard: "Standard (100%)",
+      textSizeSenior: "Senior Friendly (140%)",
       theme: "Color theme",
-      themeLight: "Light (Soft dashboard)",
+      themeLight: "Light",
       themeDark: "Dark",
       themeHighContrast: "High Contrast (Senior accessible)",
       reduceMotion: "Reduce motion",
+      reduceMotionDesc: "Disables transitions and camera panning animations",
+      privacyTitle: "Location & Privacy Control",
+      privacyDesc: "Yo'l Ma'lumoti operates in foreground-only mode. We never track your location in the background or store your browsing path.",
+      exportData: "Export My Data",
+      deleteAccount: "Delete My Account",
       voiceSpeed: "Voice guidance speed"
+    },
+    support: {
+      title: "AI Road Assistant & Support",
+      subtitle: "Verified responses only • Human handoff available",
+      needPerson: "Need urgent human verification?",
+      talkToPerson: "Talk to a person",
+      inputPlaceholder: "Type your question or request...",
+      roles: {
+        ai: "AI Assistant",
+        staff: "Dispatcher",
+        citizen: "You"
+      }
     },
     common: {
       loading: "Loading...",
@@ -309,7 +590,8 @@ export const TRANSLATIONS = {
       close: "Close",
       back: "Back",
       next: "Next",
-      save: "Save"
+      save: "Save",
+      cancel: "Cancel"
     }
   }
 };

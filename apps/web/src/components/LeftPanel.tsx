@@ -6,14 +6,9 @@ import {
   AlertTriangle, 
   Car, 
   Cone, 
-  ShieldAlert, 
-  Wind, 
-  Droplets, 
   Clock, 
-  ArrowRight,
-  List,
-  MapPin,
-  ChevronRight
+  List, 
+  ChevronRight 
 } from 'lucide-react';
 
 export const LeftPanel: React.FC = () => {
@@ -24,18 +19,18 @@ export const LeftPanel: React.FC = () => {
     features, 
     setIsListAlternative,
     setActiveRoute,
-    userCoords
+    userCoords,
+    setFocusedLocation
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [isVoiceListening, setIsVoiceListening] = useState(false);
 
-  // Web Speech API for voice search
   const handleVoiceSearch = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Voice input is not supported in this browser. Please type your destination.");
+      alert(t('topBar.voiceNotSupported'));
       return;
     }
 
@@ -62,7 +57,7 @@ export const LeftPanel: React.FC = () => {
         const places = await res.json();
         if (places.length > 0) {
           const dest = places[0];
-          // Request route from current location
+          setFocusedLocation({ lat: dest.latitude, lon: dest.longitude });
           const routeRes = await fetch(
             `/api/v1/map/route?startLat=${userCoords.lat}&startLon=${userCoords.lon}&endLat=${dest.latitude}&endLon=${dest.longitude}&mode=car`
           );
@@ -120,7 +115,7 @@ export const LeftPanel: React.FC = () => {
         {/* Filter Chips */}
         <div className="flex items-center gap-1.5 mt-3 overflow-x-auto pb-1 no-scrollbar">
           {[
-            { id: 'all', label: 'All' },
+            { id: 'all', label: t('roads.all') },
             { id: 'accidents', label: t('roads.accidents') },
             { id: 'traffic', label: t('roads.traffic') },
             { id: 'roadwork', label: t('roads.roadWork') },
@@ -160,7 +155,7 @@ export const LeftPanel: React.FC = () => {
               {weather ? `${weather.temperatureC > 0 ? '+' : ''}${weather.temperatureC}°C` : '+22°C'}
             </div>
             <p className="text-sm font-medium text-textSecondary dark:text-darkTextSec mt-1">
-              {weather ? weather.conditionText : 'Partly cloudy'}
+              {weather ? weather.conditionText : 'Clear sky'}
             </p>
           </div>
           <div className="w-16 h-16 rounded-full bg-orangeTint dark:bg-opacity-20 flex items-center justify-center text-3xl">
@@ -168,7 +163,7 @@ export const LeftPanel: React.FC = () => {
           </div>
         </div>
 
-        {/* Air Quality Badge & Advice */}
+        {/* Air Quality Badge */}
         {airQuality && (
           <div className="mt-4 pt-3 border-t border-yolBorder dark:border-darkBorder">
             <div className="flex items-center justify-between">
@@ -176,7 +171,7 @@ export const LeftPanel: React.FC = () => {
                 {t('weather.airQuality')}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-statusSuccessBg text-statusSuccess border border-[#C3E6D0]">
-                {airQuality.aqiLevel} (AQI {airQuality.aqi})
+                {airQuality.aqiLevel === 'Good' ? t('weather.airGood') : airQuality.aqiLevel === 'Moderate' ? t('weather.airModerate') : t('weather.airUnhealthy')} (AQI {airQuality.aqi})
               </span>
             </div>
             <p className="text-xs text-textSecondary dark:text-darkTextSec mt-1.5 leading-relaxed">
@@ -254,7 +249,6 @@ export const LeftPanel: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Source Pill */}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                   item.source === 'Live'
                     ? 'bg-blue-100 text-blue-700'
@@ -262,16 +256,16 @@ export const LeftPanel: React.FC = () => {
                     ? 'bg-green-100 text-green-700'
                     : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {item.source}
+                  {item.source === 'Live' ? t('roads.sourceLive') : item.source === 'Official' ? t('roads.sourceOfficial') : t('roads.sourceCommunity')}
                 </span>
               </div>
 
               <div className="flex items-center justify-between pt-1 border-t border-gray-200 dark:border-gray-700 text-xs">
                 <span className="text-textSecondary dark:text-darkTextSec">
-                  Verified ~15m ago
+                  {t('roads.verifiedTimeAgo')} ~15m
                 </span>
                 <button 
-                  onClick={() => alert(`Rerouting to bypass ${item.title}...`)}
+                  onClick={() => setFocusedLocation({ lat: item.latitude, lon: item.longitude })}
                   className="text-accentOrange font-bold hover:underline flex items-center gap-1"
                 >
                   <span>{t('roads.findAnotherWay')}</span>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Send, Bot, User, PhoneCall, ShieldAlert } from 'lucide-react';
+import { X, Send, Bot, PhoneCall } from 'lucide-react';
 import { SupportMessage } from '@yol/shared';
 
 export const SupportChatModal: React.FC = () => {
@@ -35,7 +35,7 @@ export const SupportChatModal: React.FC = () => {
       id: `tmp-${Date.now()}`,
       conversationId: 'user-conv',
       senderType: 'USER',
-      senderName: user ? user.name : 'You',
+      senderName: user ? user.name : t('support.roles.citizen'),
       text: userText,
       timestamp: new Date().toISOString()
     };
@@ -95,33 +95,34 @@ export const SupportChatModal: React.FC = () => {
             </div>
             <div>
               <h2 id="help-support-title" className="text-xl font-bold text-textPrimary dark:text-darkText">
-                AI Road Assistant & Support
+                {t('support.title')}
               </h2>
               <span className="text-xs text-textSecondary dark:text-darkTextSec flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                Verified responses only • Human handoff available
+                {t('support.subtitle')}
               </span>
             </div>
           </div>
           <button
             onClick={() => setActiveTab('map')}
+            aria-label={t('common.close')}
             className="w-10 h-10 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center text-textSecondary dark:text-darkTextSec hover:text-textPrimary"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Emergency Alert & Talk to Person Banner */}
+        {/* Talk to Person Banner */}
         <div className="flex items-center justify-between p-3 my-3 bg-innerSoftArea dark:bg-gray-800 rounded-2xl border border-yolBorder dark:border-darkBorder">
           <div className="text-xs text-textSecondary dark:text-darkTextSec">
-            Need urgent human verification?
+            {t('support.needPerson')}
           </div>
           <button
             onClick={handleEscalateToPerson}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blackPill text-white text-xs font-bold hover:bg-blackPillHover"
           >
             <PhoneCall className="w-3.5 h-3.5 text-accentOrange" />
-            <span>Talk to a person</span>
+            <span>{t('support.talkToPerson')}</span>
           </button>
         </div>
 
@@ -135,7 +136,7 @@ export const SupportChatModal: React.FC = () => {
               }`}
             >
               <span className="text-[10px] font-bold text-textSecondary dark:text-darkTextSec mb-1 px-1">
-                {m.senderName} ({m.senderType === 'AI_ASSISTANT' ? 'AI' : m.senderType === 'STAFF' ? 'Staff' : 'Citizen'})
+                {m.senderName} ({m.senderType === 'AI_ASSISTANT' ? t('support.roles.ai') : m.senderType === 'STAFF' ? t('support.roles.staff') : t('support.roles.citizen')})
               </span>
               <div
                 className={`max-w-[85%] p-3.5 rounded-2xl text-sm leading-relaxed ${
@@ -161,7 +162,7 @@ export const SupportChatModal: React.FC = () => {
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your question or request..."
+            placeholder={t('support.inputPlaceholder')}
             className="flex-1 p-3 rounded-full bg-innerSoftArea dark:bg-gray-800 text-textPrimary dark:text-darkText text-sm border border-yolBorder dark:border-darkBorder focus:outline-none focus:ring-2 focus:ring-accentOrange"
           />
           <button

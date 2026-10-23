@@ -11,7 +11,8 @@ export const LeftDock: React.FC = () => {
     setActiveTab, 
     user, 
     logout, 
-    setIsAuthOpen 
+    setIsAuthOpen,
+    t
   } = useApp();
 
   const toggleTheme = () => {
@@ -35,7 +36,6 @@ export const LeftDock: React.FC = () => {
     >
       {/* Top Dock Items */}
       <div className="flex flex-col items-center gap-5">
-        {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
           title={`Theme: ${theme}`}
@@ -50,12 +50,12 @@ export const LeftDock: React.FC = () => {
               <Eye className="w-5 h-5 text-yellow-500" />
             )}
           </div>
-          <span className="text-[11px] font-semibold tracking-tight uppercase">
-            {theme === 'light' ? 'Day' : theme === 'dark' ? 'Night' : 'Contrast'}
+          <span className="text-[10px] font-semibold tracking-tight uppercase">
+            {theme === 'light' ? t('dock.day') : theme === 'dark' ? t('dock.night') : t('dock.contrast')}
           </span>
         </button>
 
-        {/* Text Scaling Controls (Accessibility P0) */}
+        {/* Text Scaling Controls */}
         <div className="flex flex-col items-center gap-2 pt-2 border-t border-yolBorder dark:border-darkBorder">
           <button
             onClick={increaseText}
@@ -81,36 +81,36 @@ export const LeftDock: React.FC = () => {
       <div className="flex flex-col items-center gap-5">
         <button
           onClick={() => setActiveTab('help')}
-          title="Help & Support"
+          title={t('dock.help')}
           className="flex flex-col items-center gap-1 group text-textSecondary dark:text-darkTextSec hover:text-accentOrange transition-colors"
         >
           <div className="w-11 h-11 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center group-hover:bg-orangeTint transition-colors">
             <HelpCircle className="w-5 h-5" />
           </div>
-          <span className="text-[11px] font-semibold">Help</span>
+          <span className="text-[10px] font-semibold">{t('dock.help')}</span>
         </button>
 
         {user ? (
           <button
             onClick={logout}
-            title="Log out"
+            title={t('dock.exit')}
             className="flex flex-col items-center gap-1 group text-textSecondary dark:text-darkTextSec hover:text-statusDanger transition-colors"
           >
             <div className="w-11 h-11 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center group-hover:bg-statusDangerBg transition-colors">
               <LogOut className="w-5 h-5 text-statusDanger" />
             </div>
-            <span className="text-[11px] font-semibold text-statusDanger">Exit</span>
+            <span className="text-[10px] font-semibold text-statusDanger">{t('dock.exit')}</span>
           </button>
         ) : (
           <button
             onClick={() => setIsAuthOpen(true)}
-            title="Sign In"
+            title={t('dock.login')}
             className="flex flex-col items-center gap-1 group text-textSecondary dark:text-darkTextSec hover:text-accentOrange transition-colors"
           >
             <div className="w-11 h-11 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center group-hover:bg-orangeTint transition-colors">
               <LogOut className="w-5 h-5 rotate-180 text-accentOrange" />
             </div>
-            <span className="text-[11px] font-semibold">Login</span>
+            <span className="text-[10px] font-semibold">{t('dock.login')}</span>
           </button>
         )}
       </div>

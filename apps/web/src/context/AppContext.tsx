@@ -6,12 +6,24 @@ import {
   WeatherData,
   AirQualityData,
   MapFeature,
-  RouteResult
+  RouteResult,
+  Report
 } from '@yol/shared';
 
 export type AppTheme = 'light' | 'dark' | 'high-contrast';
 export type MapDisplayMode = 'combined' | 'weather' | 'roads';
 export type AppNavTab = 'map' | 'my-reports' | 'help' | 'settings' | 'editor' | 'admin' | 'analyst';
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'report' | 'road' | 'weather';
+  timestamp: string;
+  isRead: boolean;
+  latitude?: number;
+  longitude?: number;
+}
 
 interface AppContextType {
   locale: SupportedLocale;
@@ -33,6 +45,8 @@ interface AppContextType {
   setActiveTab: (tab: AppNavTab) => void;
   userCoords: { lat: number; lon: number };
   setUserCoords: (coords: { lat: number; lon: number }) => void;
+  focusedLocation: { lat: number; lon: number } | null;
+  setFocusedLocation: (coords: { lat: number; lon: number } | null) => void;
   locationStatus: 'prompt' | 'granted' | 'denied';
   setLocationStatus: (s: 'prompt' | 'granted' | 'denied') => void;
   isReportingOpen: boolean;
@@ -43,17 +57,23 @@ interface AppContextType {
   setIsAuthOpen: (open: boolean) => void;
   isListAlternative: boolean;
   setIsListAlternative: (open: boolean) => void;
+  isNotificationsOpen: boolean;
+  setIsNotificationsOpen: (open: boolean) => void;
+  notifications: AppNotification[];
+  markNotificationAsRead: (id: string) => void;
+  markAllNotificationsAsRead: () => void;
   features: MapFeature[];
+  userReports: Report[];
   weather: WeatherData | null;
   airQuality: AirQualityData | null;
   activeRoute: RouteResult | null;
   setActiveRoute: (route: RouteResult | null) => void;
   refreshData: () => Promise<void>;
+  fetchUserReports: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Default coordinates: Tashkent Center
 const DEFAULT_COORDS = { lat: 41.3111, lon: 69.2797 };
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -85,19 +105,52 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [mapMode, setMapMode] = useState<MapDisplayMode>('combined');
   const [activeTab, setActiveTab] = useState<AppNavTab>('map');
   const [userCoords, setUserCoords] = useState(DEFAULT_COORDS);
+  const [focusedLocation, setFocusedLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   
   const [isReportingOpen, setIsReportingOpen] = useState(false);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isListAlternative, setIsListAlternative] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const [features, setFeatures] = useState<MapFeature[]>([]);
+  const [userReports, setUserReports] = useState<Report[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
   const [activeRoute, setActiveRoute] = useState<RouteResult | null>(null);
 
-  // Sync theme to DOM class
+  const [notifications, setNotifications] = useState<AppNotification[]>([
+    {
+      id: 'notif-1',
+      title: "Buyuk Ipak Yo'lida ta'mir ishlari",
+      message: "Avtomobillar harakati vaqtincha Mirzo Ulug'bek ko'chasi orqali aylanib o'tmoqda.",
+      type: 'road',
+      timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      isRead: false,
+      latitude: 41.3289,
+      longitude: 69.3350
+    },
+    {
+      id: 'notif-2',
+      title: "Xabaringiz tekshirilmoqda",
+      message: "Minor kanali bo'yidagi daraxt shoxi to'siqligi bo'yicha hisobotingiz tahririyat tomonidan qabul qilindi.",
+      type: 'report',
+      timestamp: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+      isRead: false,
+      latitude: 41.3320,
+      longitude: 69.2830
+    },
+    {
+      id: 'notif-3',
+      title: "Ob-havo yangilanishi",
+      message: "Toshkentda havo sifati o'rtacha toza darajada (AQI 34). Sayr qilish uchun qulay.",
+      type: 'weather',
+      timestamp: new Date(Date.now() - 75 * 60 * 1000).toISOString(),
+      isRead: true
+    }
+  ]);
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove('dark', 'high-contrast');
@@ -109,13 +162,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('yol_theme', theme);
   }, [theme]);
 
-  // Sync text scale to CSS variable
   useEffect(() => {
     document.documentElement.style.setProperty('--text-scale', textScale.toString());
     localStorage.setItem('yol_text_scale', textScale.toString());
   }, [textScale]);
 
-  // Sync reduce motion class
   useEffect(() => {
     if (reduceMotion) {
       document.documentElement.classList.add('reduce-motion');
@@ -130,17 +181,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     localStorage.setItem('yol_locale', l);
   };
 
-  const setTheme = (t: AppTheme) => {
-    setThemeState(t);
-  };
-
-  const setTextScale = (scale: number) => {
-    setTextScaleState(scale);
-  };
-
-  const setReduceMotion = (r: boolean) => {
-    setReduceMotionState(r);
-  };
+  const setTheme = (t: AppTheme) => setThemeState(t);
+  const setTextScale = (scale: number) => setTextScaleState(scale);
+  const setReduceMotion = (r: boolean) => setReduceMotionState(r);
 
   const loginAs = (userData: User, authToken: string) => {
     setUser(userData);
@@ -152,12 +195,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const logout = () => {
     setUser(null);
     setToken(null);
+    setUserReports([]);
     localStorage.removeItem('yol_user');
     localStorage.removeItem('yol_token');
     setActiveTab('map');
   };
 
-  // Translation helper function
   const t = (path: string): any => {
     const keys = path.split('.');
     let current: any = TRANSLATIONS[locale] || TRANSLATIONS.uz;
@@ -169,6 +212,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
     return current;
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
+    );
+  };
+
+  const markAllNotificationsAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  };
+
+  const fetchUserReports = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/v1/reports/my', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserReports(data.reports || []);
+      }
+    } catch (e) {
+      console.warn('Failed to load user reports:', e);
+    }
   };
 
   const refreshData = async () => {
@@ -191,14 +259,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         const aqData = await aqRes.json();
         setAirQuality(aqData);
       }
+
+      if (token) {
+        await fetchUserReports();
+      }
     } catch (e) {
-      console.warn('Data fetch error, using local state:', e);
+      console.warn('Data fetch error:', e);
     }
   };
 
   useEffect(() => {
     refreshData();
-  }, [userCoords]);
+  }, [userCoords, token]);
 
   return (
     <AppContext.Provider
@@ -222,6 +294,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setActiveTab,
         userCoords,
         setUserCoords,
+        focusedLocation,
+        setFocusedLocation,
         locationStatus,
         setLocationStatus,
         isReportingOpen,
@@ -232,12 +306,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setIsAuthOpen,
         isListAlternative,
         setIsListAlternative,
+        isNotificationsOpen,
+        setIsNotificationsOpen,
+        notifications,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
         features,
+        userReports,
         weather,
         airQuality,
         activeRoute,
         setActiveRoute,
-        refreshData
+        refreshData,
+        fetchUserReports
       }}
     >
       {children}

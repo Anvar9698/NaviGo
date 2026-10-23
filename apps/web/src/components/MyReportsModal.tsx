@@ -1,51 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Clock, CheckCircle, AlertCircle, RefreshCw, FileText } from 'lucide-react';
+import { X, Clock, CheckCircle, AlertCircle, RefreshCw, FileText, MapPin } from 'lucide-react';
 import { Report } from '@yol/shared';
 
 export const MyReportsModal: React.FC = () => {
-  const { activeTab, setActiveTab, t, token, user, setIsAuthOpen } = useApp();
-  const [reports, setReports] = useState<Report[]>([]);
+  const { 
+    activeTab, 
+    setActiveTab, 
+    t, 
+    token, 
+    user, 
+    setIsAuthOpen, 
+    userReports, 
+    fetchUserReports,
+    setFocusedLocation 
+  } = useApp();
   const [isLoading, setIsLoading] = useState(false);
-
-  const fetchMyReports = async () => {
-    if (!token) return;
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/v1/reports/my', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data.reports || []);
-      }
-    } catch (e) {
-      console.warn('Failed to load my reports', e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (activeTab === 'my-reports' && token) {
-      fetchMyReports();
+      setIsLoading(true);
+      fetchUserReports().finally(() => setIsLoading(false));
     }
   }, [activeTab, token]);
 
   if (activeTab !== 'my-reports') return null;
 
+  const handleViewOnMap = (report: Report) => {
+    setFocusedLocation({ lat: report.latitude, lon: report.longitude });
+    setActiveTab('map');
+  };
+
   const getStatusBadge = (status: Report['status']) => {
+    const label = t(`myReports.statuses.${status}`) || status;
     switch (status) {
       case 'SUBMITTED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">Submitted</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">{label}</span>;
       case 'UNDER_REVIEW':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">Under Review</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">{label}</span>;
       case 'PUBLISHED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Published to Map</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">{label}</span>;
       case 'REJECTED':
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Rejected</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">{label}</span>;
       default:
-        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{status}</span>;
+        return <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700">{label}</span>;
     }
   };
 
@@ -64,15 +62,16 @@ export const MyReportsModal: React.FC = () => {
             </div>
             <div>
               <h2 id="my-reports-title" className="text-xl font-bold text-textPrimary dark:text-darkText">
-                {t('nav.myReports')}
+                {t('myReports.title')}
               </h2>
               <span className="text-xs text-textSecondary dark:text-darkTextSec">
-                Track verification progress of your community road submissions
+                {t('myReports.subtitle')}
               </span>
             </div>
           </div>
           <button
             onClick={() => setActiveTab('map')}
+            aria-label={t('common.close')}
             className="w-10 h-10 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center text-textSecondary dark:text-darkTextSec hover:text-textPrimary"
           >
             <X className="w-5 h-5" />
@@ -82,15 +81,17 @@ export const MyReportsModal: React.FC = () => {
         {!user ? (
           <div className="py-12 flex flex-col items-center text-center">
             <AlertCircle className="w-12 h-12 text-accentOrange mb-3" />
-            <h3 className="text-lg font-bold text-textPrimary dark:text-darkText">Sign in required</h3>
+            <h3 className="text-lg font-bold text-textPrimary dark:text-darkText">
+              {t('myReports.signInRequired')}
+            </h3>
             <p className="text-sm text-textSecondary dark:text-darkTextSec max-w-sm mt-1">
-              Please sign in with your citizen account to view and track your reports.
+              {t('myReports.signInPrompt')}
             </p>
             <button
               onClick={() => setIsAuthOpen(true)}
               className="mt-5 px-6 py-2.5 rounded-full bg-blackPill text-white font-bold"
             >
-              Sign In
+              {t('topBar.login')}
             </button>
           </div>
         ) : (
@@ -99,15 +100,15 @@ export const MyReportsModal: React.FC = () => {
               <div className="py-12 text-center text-textSecondary dark:text-darkTextSec">
                 {t('common.loading')}
               </div>
-            ) : reports.length === 0 ? (
+            ) : userReports.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-textSecondary dark:text-darkTextSec">You have not submitted any reports yet.</p>
+                <p className="text-textSecondary dark:text-darkTextSec">{t('myReports.noReports')}</p>
               </div>
             ) : (
-              reports.map((report) => (
+              userReports.map((report) => (
                 <div 
                   key={report.id}
-                  className="p-4 rounded-2xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700 flex flex-col gap-2"
+                  className="p-4 rounded-2xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700 flex flex-col gap-2.5 shadow-sm"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -122,19 +123,31 @@ export const MyReportsModal: React.FC = () => {
                   </div>
 
                   <p className="text-xs text-textSecondary dark:text-darkTextSec">
-                    {report.description || 'No additional details provided.'}
+                    {report.description || t('myReports.noDetails')}
                   </p>
 
                   {report.statusNotes && (
-                    <div className="mt-1 p-2.5 rounded-xl bg-white dark:bg-darkCard text-xs border border-yolBorder dark:border-gray-700">
-                      <span className="font-bold text-accentOrange">Editor feedback: </span>
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-darkCard text-xs border border-yolBorder dark:border-gray-700">
+                      <span className="font-bold text-accentOrange">{t('myReports.editorFeedback')}: </span>
                       <span className="text-textSecondary dark:text-darkTextSec">{report.statusNotes}</span>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[11px] text-textSecondary dark:text-darkTextSec pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <span>Category: <strong className="capitalize text-textPrimary dark:text-darkText">{report.category}</strong></span>
-                    <span>Coordinates: {report.latitude.toFixed(3)}, {report.longitude.toFixed(3)}</span>
+                  <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2 text-textSecondary dark:text-darkTextSec text-[11px]">
+                      <span>{t('report.categoryLabel')}: <strong className="capitalize text-textPrimary dark:text-darkText">{t(`report.categories.${report.category}`)}</strong></span>
+                      <span>•</span>
+                      <span>{report.latitude.toFixed(4)}, {report.longitude.toFixed(4)}</span>
+                    </div>
+
+                    {/* View on Map Button */}
+                    <button
+                      onClick={() => handleViewOnMap(report)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-darkCard hover:bg-orangeTint hover:text-accentOrange text-textPrimary dark:text-darkText text-xs font-bold border border-yolBorder dark:border-gray-700 transition-colors shadow-sm"
+                    >
+                      <MapPin className="w-3.5 h-3.5 text-accentOrange" />
+                      <span>{t('myReports.viewOnMap')}</span>
+                    </button>
                   </div>
                 </div>
               ))

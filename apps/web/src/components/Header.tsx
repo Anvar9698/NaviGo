@@ -2,7 +2,6 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   MapPin, 
-  Search, 
   Bell, 
   User as UserIcon, 
   Shield, 
@@ -23,10 +22,12 @@ export const Header: React.FC = () => {
     setActiveTab, 
     user, 
     setIsAuthOpen,
-    features
+    setIsNotificationsOpen,
+    notifications
   } = useApp();
 
   const locales: SupportedLocale[] = ['uz', 'ru', 'en'];
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   return (
     <header className="w-full flex items-center justify-between px-3 md:px-6 py-3 z-30 select-none">
@@ -165,14 +166,17 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Notifications Icon Button */}
-        <div className="relative hidden sm:block">
+        <div className="relative">
           <button 
+            onClick={() => setIsNotificationsOpen(true)}
             aria-label={t('topBar.notifications')}
-            className="w-11 h-11 rounded-full bg-white dark:bg-darkCard flex items-center justify-center shadow-soft border border-yolBorder dark:border-darkBorder hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-textPrimary dark:text-darkText"
+            className="w-11 h-11 rounded-full bg-white dark:bg-darkCard flex items-center justify-center shadow-soft border border-yolBorder dark:border-darkBorder hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-textPrimary dark:text-darkText relative"
           >
-            <Bell className="w-5 h-5" />
-            {features.length > 0 && (
-              <span className="absolute top-1 right-1 w-3 h-3 bg-accentOrange rounded-full border-2 border-white dark:border-darkCard"></span>
+            <Bell className="w-5 h-5 text-accentOrange" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-accentOrange text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-darkCard">
+                {unreadCount}
+              </span>
             )}
           </button>
         </div>

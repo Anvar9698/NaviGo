@@ -7,15 +7,12 @@ export const SettingsModal: React.FC = () => {
     activeTab, 
     setActiveTab, 
     t, 
-    locale, 
-    setLocale, 
     theme, 
     setTheme, 
     textScale, 
     setTextScale,
     reduceMotion,
-    setReduceMotion,
-    user 
+    setReduceMotion 
   } = useApp();
 
   if (activeTab !== 'settings') return null;
@@ -38,12 +35,13 @@ export const SettingsModal: React.FC = () => {
                 {t('accessibility.title')}
               </h2>
               <span className="text-xs text-textSecondary dark:text-darkTextSec">
-                Visual comfort, older adult accessibility & privacy
+                {t('accessibility.subtitle')}
               </span>
             </div>
           </div>
           <button
             onClick={() => setActiveTab('map')}
+            aria-label={t('common.close')}
             className="w-10 h-10 rounded-full bg-innerSoftArea dark:bg-gray-800 flex items-center justify-center text-textSecondary dark:text-darkTextSec hover:text-textPrimary"
           >
             <X className="w-5 h-5" />
@@ -72,8 +70,8 @@ export const SettingsModal: React.FC = () => {
               className="w-full accent-accentOrange cursor-pointer"
             />
             <div className="flex justify-between text-[11px] text-textSecondary mt-1">
-              <span>Standard (100%)</span>
-              <span>Senior Friendly (140%)</span>
+              <span>{t('accessibility.textSizeStandard')}</span>
+              <span>{t('accessibility.textSizeSenior')}</span>
             </div>
           </div>
 
@@ -93,7 +91,7 @@ export const SettingsModal: React.FC = () => {
                 }`}
               >
                 <Sun className="w-5 h-5 text-accentOrange" />
-                <span>Light</span>
+                <span>{t('accessibility.themeLight')}</span>
               </button>
 
               <button
@@ -106,7 +104,7 @@ export const SettingsModal: React.FC = () => {
                 }`}
               >
                 <Moon className="w-5 h-5 text-yellow-400" />
-                <span>Dark</span>
+                <span>{t('accessibility.themeDark')}</span>
               </button>
 
               <button
@@ -119,7 +117,7 @@ export const SettingsModal: React.FC = () => {
                 }`}
               >
                 <Eye className="w-5 h-5 text-yellow-400" />
-                <span>High Contrast</span>
+                <span>{t('accessibility.themeHighContrast')}</span>
               </button>
             </div>
           </div>
@@ -131,7 +129,7 @@ export const SettingsModal: React.FC = () => {
                 {t('accessibility.reduceMotion')}
               </div>
               <div className="text-xs text-textSecondary dark:text-darkTextSec">
-                Disables transitions and camera panning animations
+                {t('accessibility.reduceMotionDesc')}
               </div>
             </div>
             <input
@@ -142,29 +140,29 @@ export const SettingsModal: React.FC = () => {
             />
           </div>
 
-          {/* 4. Privacy & Consent (Part 5.2) */}
+          {/* 4. Privacy & Consent */}
           <div className="p-4 rounded-2xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700 space-y-3">
             <div className="flex items-center gap-2 text-sm font-bold text-textPrimary dark:text-darkText">
               <Shield className="w-4 h-4 text-accentOrange" />
-              <span>Location & Privacy Control</span>
+              <span>{t('accessibility.privacyTitle')}</span>
             </div>
             <p className="text-xs text-textSecondary dark:text-darkTextSec leading-relaxed">
-              Yo'l Ma'lumoti operates in <strong>foreground-only</strong> mode. We never track your location in the background or store your browsing path.
+              {t('accessibility.privacyDesc')}
             </p>
             <div className="flex gap-2 pt-1">
               <button
-                onClick={() => alert('Your data export package has been prepared.')}
+                onClick={() => alert('Data export prepared.')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-darkCard text-xs font-bold text-textPrimary dark:text-darkText border border-yolBorder dark:border-gray-700"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Export My Data</span>
+                <span>{t('accessibility.exportData')}</span>
               </button>
               <button
-                onClick={() => alert('All personal data successfully purged.')}
+                onClick={() => alert('Account data purged.')}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-statusDangerBg text-statusDanger text-xs font-bold"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete My Account</span>
+                <span>{t('accessibility.deleteAccount')}</span>
               </button>
             </div>
           </div>

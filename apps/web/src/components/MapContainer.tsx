@@ -11,9 +11,10 @@ import {
   Car, 
   CheckCircle,
   CloudSun,
-  Layers
+  Layers,
+  MapPin
 } from 'lucide-react';
-import { MapFeature } from '@yol/shared';
+import { MapFeature, Report } from '@yol/shared';
 
 export const MapContainer: React.FC = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -23,26 +24,29 @@ export const MapContainer: React.FC = () => {
   const { 
     userCoords, 
     setUserCoords, 
+    focusedLocation,
+    setFocusedLocation,
     features, 
+    userReports,
     mapMode, 
     setMapMode,
+    locale,
     t, 
     locationStatus, 
     setLocationStatus,
     setIsReportingOpen,
     setIsLegendOpen,
     activeRoute,
-    weather,
     theme
   } = useApp();
 
   const [selectedFeature, setSelectedFeature] = useState<MapFeature | null>(null);
+  const [selectedUserReport, setSelectedUserReport] = useState<Report | null>(null);
 
   // Initialize MapLibre
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Standard OpenStreetMap tiles - 100% free, no API key, no watermark
     const osmTiles = [
       'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
       'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -91,7 +95,20 @@ export const MapContainer: React.FC = () => {
     };
   }, [theme]);
 
-  // Handle markers
+  // Handle flying to focused location (e.g. from My Reports "View on map" button)
+  useEffect(() => {
+    if (focusedLocation && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [focusedLocation.lon, focusedLocation.lat],
+        zoom: 16,
+        essential: true
+      });
+      // Clear after flying
+      setFocusedLocation(null);
+    }
+  }, [focusedLocation]);
+
+  // Handle markers: Incidents + User's Own Reports
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -115,7 +132,7 @@ export const MapContainer: React.FC = () => {
       .addTo(mapRef.current);
     markersRef.current.push(userMarker);
 
-    // 2. Add Road Incidents markers if in Mode B or Combined
+    // 2. Add Road Incidents markers
     if (mapMode === 'roads' || mapMode === 'combined') {
       features.forEach((feature) => {
         const el = document.createElement('div');
@@ -143,6 +160,7 @@ export const MapContainer: React.FC = () => {
         `;
 
         el.onclick = () => {
+          setSelectedUserReport(null);
           setSelectedFeature(feature);
         };
 
@@ -152,8 +170,31 @@ export const MapContainer: React.FC = () => {
 
         markersRef.current.push(marker);
       });
+
+      // 3. Add User's Own Submitted Reports as Distinct Purple Pins
+      userReports.forEach((rep) => {
+        const repEl = document.createElement('div');
+        repEl.className = 'cursor-pointer transform hover:scale-110 transition-transform';
+        repEl.innerHTML = `
+          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-600 text-white shadow-lg text-xs font-bold border-2 border-white animate-bounce">
+            <span>📍</span>
+            <span class="hidden sm:inline">${t('map.yourReport')}</span>
+          </div>
+        `;
+
+        repEl.onclick = () => {
+          setSelectedFeature(null);
+          setSelectedUserReport(rep);
+        };
+
+        const repMarker = new maplibregl.Marker({ element: repEl })
+          .setLngLat([rep.longitude, rep.latitude])
+          .addTo(mapRef.current!);
+
+        markersRef.current.push(repMarker);
+      });
     }
-  }, [features, mapMode, userCoords]);
+  }, [features, userReports, mapMode, userCoords, locale]);
 
   // Handle route display
   useEffect(() => {
@@ -296,7 +337,6 @@ export const MapContainer: React.FC = () => {
 
       {/* 5. Bottom-Right Controls: Recenter & Report Problem */}
       <div className="absolute bottom-6 right-6 z-10 flex items-center gap-3">
-        {/* Recenter Button */}
         <button
           onClick={handleRecenter}
           aria-label={t('map.myLocation')}
@@ -305,7 +345,6 @@ export const MapContainer: React.FC = () => {
           <Navigation className="w-6 h-6 text-accentOrange" />
         </button>
 
-        {/* Big Black Pill "+ Report a problem" Button */}
         <button
           onClick={() => setIsReportingOpen(true)}
           className="flex items-center gap-3 bg-blackPill text-white px-6 py-4 rounded-full shadow-float hover:bg-blackPillHover transition-all text-base font-bold group border border-gray-800"
@@ -317,7 +356,7 @@ export const MapContainer: React.FC = () => {
         </button>
       </div>
 
-      {/* 6. Selected Incident Modal/Card Popup */}
+      {/* 6. Selected Incident Modal Popup */}
       {selectedFeature && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md bg-white dark:bg-darkCard p-5 rounded-card shadow-float border border-yolBorder dark:border-darkBorder animate-fade-in">
           <div className="flex items-start justify-between gap-3">
@@ -330,7 +369,7 @@ export const MapContainer: React.FC = () => {
                   {selectedFeature.title}
                 </h3>
                 <span className="text-xs text-textSecondary dark:text-darkTextSec">
-                  Source:{' '}
+                  {t('map.sourceLabel')}:{' '}
                   <span className="font-semibold text-accentOrange">
                     [{selectedFeature.source}]
                   </span>
@@ -351,7 +390,7 @@ export const MapContainer: React.FC = () => {
 
           <div className="mt-4 pt-3 border-t border-yolBorder dark:border-darkBorder flex items-center justify-between">
             <span className="text-xs text-textSecondary dark:text-darkTextSec">
-              Verified: {new Date(selectedFeature.verifiedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {t('map.verifiedAt')}: {new Date(selectedFeature.verifiedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             <button
               onClick={() => setSelectedFeature(null)}
@@ -359,6 +398,44 @@ export const MapContainer: React.FC = () => {
             >
               {t('roads.findAnotherWay')}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Selected User Report Popup */}
+      {selectedUserReport && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 w-11/12 max-w-md bg-white dark:bg-darkCard p-5 rounded-card shadow-float border border-purple-400 animate-fade-in">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-lg">
+                📍
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-purple-600 uppercase">
+                  {t('map.yourReport')} ({selectedUserReport.id})
+                </span>
+                <h3 className="font-bold text-base text-textPrimary dark:text-darkText leading-tight">
+                  {selectedUserReport.title}
+                </h3>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedUserReport(null)}
+              className="text-textSecondary hover:text-textPrimary p-1"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p className="text-xs text-textSecondary dark:text-darkTextSec mt-2">
+            {selectedUserReport.description || t('myReports.noDetails')}
+          </p>
+
+          <div className="mt-3 p-2 rounded-xl bg-innerSoftArea dark:bg-gray-800 text-xs flex justify-between items-center">
+            <span>Status:</span>
+            <span className="font-bold text-purple-600 uppercase">
+              {t(`myReports.statuses.${selectedUserReport.status}`) || selectedUserReport.status}
+            </span>
           </div>
         </div>
       )}
