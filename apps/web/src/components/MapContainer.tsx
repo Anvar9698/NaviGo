@@ -42,10 +42,12 @@ export const MapContainer: React.FC = () => {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Use Carto Voyager or Positron tiles for high clarity and soft modern palette
-    const tileUrl = theme === 'dark' 
-      ? 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
-      : 'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png';
+    // Standard OpenStreetMap tiles - 100% free, no API key, no watermark
+    const osmTiles = [
+      'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+    ];
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -54,9 +56,9 @@ export const MapContainer: React.FC = () => {
         sources: {
           'osm-tiles': {
             type: 'raster',
-            tiles: [tileUrl],
+            tiles: osmTiles,
             tileSize: 256,
-            attribution: '© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>, © <a href="https://carto.com/">CARTO</a>'
+            attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
           }
         },
         layers: [
@@ -65,7 +67,12 @@ export const MapContainer: React.FC = () => {
             type: 'raster',
             source: 'osm-tiles',
             minzoom: 0,
-            maxzoom: 19
+            maxzoom: 19,
+            paint: theme === 'dark' ? {
+              'raster-brightness-max': 0.65,
+              'raster-contrast': 0.3,
+              'raster-saturation': -0.5
+            } : {}
           }
         ]
       },
