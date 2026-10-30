@@ -138,6 +138,13 @@ export const AmbulanceMapLayer: React.FC<AmbulanceMapLayerProps> = ({
             coordinates: activeRequest.routeGeometry
           }
         });
+
+        // Fit map bounds to view both ambulance and destination
+        if (activeRequest.status === 'enroute' || activeRequest.status === 'assigned') {
+          const bounds = new maplibregl.LngLatBounds();
+          activeRequest.routeGeometry.forEach(coord => bounds.extend(coord));
+          map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 1000 });
+        }
       } else {
         source.setData({
           type: 'Feature',

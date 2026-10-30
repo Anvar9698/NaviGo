@@ -116,10 +116,11 @@ class AmbulanceService {
     lon: number;
     description: string;
     severity: EmergencySeverity;
+    autoDispatchDemo?: boolean;
   }): Promise<{ request: EmergencyRequest; isDuplicate?: boolean; message?: string }> {
-    // Check 150m / 5-min duplicate
+    // In demo environment, check if existing call was already completed/cancelled
     const duplicate = ambulanceStore.findDuplicateRecentRequest(data.lat, data.lon);
-    if (duplicate) {
+    if (duplicate && !data.autoDispatchDemo) {
       return {
         request: duplicate,
         isDuplicate: true,
@@ -196,6 +197,33 @@ class AmbulanceService {
     ambulanceStore.setAcceptTimer(id, () => {
       this.handleAcceptTimeout(id);
     }, timeoutMs);
+
+    // Demo automated dispatch simulation:
+    // 1. Dispatcher automatically accepts after 2 seconds
+    // 2. Driver automatically starts journey ("GO") after 1.5 seconds
+    // 3. Ambulance moves along real road route to the patient
+    if (data.autoDispatchDemo) {
+      const autoAcceptTimer = setTimeout(async () => {
+        try {
+          const reqCheck = ambulanceStore.getRequest(id);
+          if (reqCheck && reqCheck.status === 'pending') {
+            const accepted = await this.acceptEmergencyRequest(id, nearest.hospital.id, 'usr-disp-1');
+            if (accepted && accepted.assignedAmbulanceId) {
+              const autoGoTimer = setTimeout(() => {
+                try {
+                  const reqCheck2 = ambulanceStore.getRequest(id);
+                  if (reqCheck2 && reqCheck2.status === 'assigned') {
+                    this.driverGo(id, accepted.assignedAmbulanceId!, 'usr-driver-1');
+                  }
+                } catch (e) {}
+              }, 1500);
+              if (autoGoTimer && typeof autoGoTimer.unref === 'function') autoGoTimer.unref();
+            }
+          }
+        } catch (e) {}
+      }, 2000);
+      if (autoAcceptTimer && typeof autoAcceptTimer.unref === 'function') autoAcceptTimer.unref();
+    }
 
     dbStore.appendAudit({
       id: uuidv4(),
@@ -614,10 +642,20 @@ class AmbulanceService {
     const stats = this.getStats();
 
     if (!user) {
+      const demoActiveReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo') ||
+                            ambulanceStore.getActiveRequestForCitizen('usr-citizen-1') ||
+                            ambulanceStore.getAllRequests().find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
+      let assignedAmbulances: AmbulanceUnit[] = [];
+      if (demoActiveReq && demoActiveReq.assignedAmbulanceId) {
+        const unit = ambulanceStore.getAmbulance(demoActiveReq.assignedAmbulanceId);
+        if (unit) assignedAmbulances = [unit];
+      }
+
       return {
-        role: 'ANONYMOUS',
+        role: 'CITIZEN',
         hospitals,
-        ambulances: [],
+        ambulances: assignedAmbulances,
+        activeRequest: demoActiveReq || null,
         stats,
         timestamp: nowIso
       };
@@ -695,7 +733,11 @@ class AmbulanceService {
     }
 
     // Regular Citizen (USER)
-    const activeReq = ambulanceStore.getActiveRequestForCitizen(user.id);
+    let activeReq = ambulanceStore.getActiveRequestForCitizen(user.id);
+    if (!activeReq) {
+      activeReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo') ||
+                  ambulanceStore.getAllRequests().find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
+    }
     let assignedAmbulances: AmbulanceUnit[] = [];
     if (activeReq && activeReq.assignedAmbulanceId) {
       const unit = ambulanceStore.getAmbulance(activeReq.assignedAmbulanceId);
@@ -752,28 +794,35 @@ class AmbulanceService {
         }
       }
 
-      // If at end of route or close to destination (within 25 meters), transition to onscene
-      if (closestIdx >= coords.length - 1 || minD < 0.025) {
+      // Advance 2-4 points along the road per tick for smooth, clearly visible movement on map
+      const advanceBy = Math.max(1, Math.min(3, Math.round(coords.length / 16)));
+      const nextIdx = Math.min(coords.length - 1, closestIdx + advanceBy);
+
+      // If at end of route or close to destination (within 35 meters), transition to onscene
+      if (closestIdx >= coords.length - 1 || nextIdx >= coords.length - 1 || minD < 0.035) {
         amb.lat = req.lat;
         amb.lon = req.lon;
         amb.status = 'onscene';
         req.status = 'onscene';
+        req.etaMinutes = 0;
         ambulanceStore.upsertAmbulance(amb);
         ambulanceStore.saveRequest(req);
         continue;
       }
 
-      // Advance along coordinates
-      const nextIdx = Math.min(coords.length - 1, closestIdx + 1);
       const targetLon = coords[nextIdx][0];
       const targetLat = coords[nextIdx][1];
 
-      const stepRatio = Math.min(1, Math.max(0.15, speedFactor));
-      amb.lat = Number((amb.lat + (targetLat - amb.lat) * stepRatio).toFixed(6));
-      amb.lon = Number((amb.lon + (targetLon - amb.lon) * stepRatio).toFixed(6));
+      amb.lat = Number(targetLat.toFixed(6));
+      amb.lon = Number(targetLon.toFixed(6));
       amb.lastLocationUpdate = new Date().toISOString();
 
+      // Recalculate remaining ETA minutes
+      const remainingProgress = (coords.length - 1 - nextIdx) / (coords.length - 1);
+      req.etaMinutes = Math.max(1, Math.round(remainingProgress * 7));
+
       ambulanceStore.upsertAmbulance(amb);
+      ambulanceStore.saveRequest(req);
     }
   }
 

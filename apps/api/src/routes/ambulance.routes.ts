@@ -80,7 +80,6 @@ const createRequestSchema = z.object({
 
 ambulanceRouter.post(
   '/requests',
-  requireAuth,
   emergencyLimiter,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
@@ -90,14 +89,18 @@ ambulanceRouter.post(
 
       const parsed = createRequestSchema.parse(req.body);
 
+      const citizenId = req.user ? req.user.id : 'usr-citizen-demo';
+      const citizenName = req.user ? req.user.name : 'Fuqaro (Demo)';
+
       const result = await ambulanceService.createEmergencyRequest({
-        citizenId: req.user!.id,
-        citizenName: req.user!.name,
+        citizenId,
+        citizenName,
         citizenPhone: parsed.citizenPhone,
         lat: parsed.lat,
         lon: parsed.lon,
         description: parsed.description,
-        severity: parsed.severity
+        severity: parsed.severity,
+        autoDispatchDemo: true
       });
 
       res.status(201).json(result);
@@ -115,18 +118,17 @@ ambulanceRouter.post(
 // 4. POST /requests/:id/cancel - Citizen cancels own request
 ambulanceRouter.post(
   '/requests/:id/cancel',
-  requireAuth,
   (req: AuthenticatedRequest, res: Response) => {
     const existing = ambulanceStore.getRequest(req.params.id);
     if (!existing) {
       return res.status(404).json({ error: 'NotFound', message: 'Request not found' });
     }
 
-    if (existing.citizenId !== req.user!.id && req.user!.role !== 'ADMIN') {
+    if (req.user && req.user.role !== 'ADMIN' && existing.citizenId !== req.user.id && existing.citizenId !== 'usr-citizen-demo') {
       return res.status(403).json({ error: 'Forbidden', message: 'You can only cancel your own emergency call' });
     }
 
-    const updated = ambulanceService.cancelEmergencyRequest(req.params.id, req.user!.id);
+    const updated = ambulanceService.cancelEmergencyRequest(req.params.id, req.user?.id || 'usr-citizen-demo');
     res.json(updated);
   }
 );

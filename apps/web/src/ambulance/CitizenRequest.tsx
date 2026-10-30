@@ -29,9 +29,9 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
   onRefresh
 }) => {
   const { userCoords, t } = useApp();
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState("Bemor 45 yoshda, ko'krak qafasida o'tkir og'riq va hushdan ketish holati.");
   const [severity, setSeverity] = useState<EmergencySeverity>(1);
-  const [phone, setPhone] = useState('+998 ');
+  const [phone, setPhone] = useState('+998 90 123 45 67');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -53,7 +53,6 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
         severity,
         citizenPhone: phone.trim()
       });
-      setDescription('');
       onRefresh();
     } catch (err: any) {
       setErrorMsg(err.message || 'Xatolik yuz berdi');
@@ -266,7 +265,7 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
 
           {/* Description */}
           <div>
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+            <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block mb-1">
               Bemor holati va alomatlari:
             </label>
             <textarea
@@ -276,7 +275,7 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
               rows={3}
               maxLength={500}
               required
-              className="w-full px-3.5 py-2.5 rounded-2xl border border-yolBorder dark:border-gray-700 bg-innerSoftArea dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-accentOrange transition-all"
+              className="w-full px-3.5 py-2.5 rounded-2xl border-2 border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-950 dark:text-white font-medium text-sm focus:outline-none focus:ring-2 focus:ring-accentOrange transition-all placeholder:text-gray-400"
             />
             <div className="flex justify-between items-center text-[10px] text-textSecondary mt-1">
               <span>Shifokorga ko'rsatiladigan ma'lumot</span>
@@ -286,7 +285,7 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
 
           {/* Phone Number */}
           <div>
-            <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+            <label className="text-xs font-bold text-gray-800 dark:text-gray-200 block mb-1">
               Bog'lanish uchun telefon:
             </label>
             <input
@@ -294,7 +293,7 @@ export const CitizenRequest: React.FC<CitizenRequestProps> = ({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+998 90 123 45 67"
-              className="w-full px-3.5 py-2 rounded-2xl border border-yolBorder dark:border-gray-700 bg-innerSoftArea dark:bg-gray-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accentOrange"
+              className="w-full px-3.5 py-2 rounded-2xl border-2 border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-950 dark:text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-accentOrange placeholder:text-gray-400"
             />
           </div>
 
