@@ -36,6 +36,20 @@ export const LeftDock: React.FC = () => {
     >
       {/* Top Dock Items */}
       <div className="flex flex-col items-center gap-5">
+        {/* Tez yordam 103 Quick Navigation Pill */}
+        <a
+          href="#/ambulance"
+          title="Tez yordam 103"
+          className="flex flex-col items-center gap-1 group transition-transform active:scale-95"
+        >
+          <div className="w-11 h-11 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md group-hover:bg-red-700 transition-colors">
+            <span className="text-lg">🚑</span>
+          </div>
+          <span className="text-[10px] font-black text-red-600 dark:text-red-400 uppercase tracking-tight">
+            103
+          </span>
+        </a>
+
         <button
           onClick={toggleTheme}
           title={`Theme: ${theme}`}

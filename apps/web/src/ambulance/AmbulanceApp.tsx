@@ -114,12 +114,16 @@ export const AmbulanceApp: React.FC = () => {
           {/* Left: Back Link & 103 Brand */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => { window.location.hash = ''; }}
-              className="flex items-center gap-2 bg-innerSoftArea dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3.5 py-2 rounded-full text-xs font-bold text-textPrimary dark:text-darkText transition-all border border-yolBorder dark:border-gray-700"
+              onClick={() => {
+                window.location.hash = '';
+                // Also trigger hashchange event manually in case browser doesn't dispatch on hash clear
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+              }}
+              className="flex items-center gap-2 bg-innerSoftArea dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-3.5 py-2 rounded-full text-xs font-bold text-textPrimary dark:text-darkText transition-all border border-yolBorder dark:border-gray-700 shadow-sm"
               title="Yo'l Ma'lumoti bosh sahifasiga qaytish"
             >
               <ArrowLeft className="w-4 h-4 text-accentOrange" />
-              <span className="hidden sm:inline">Yo'l Ma'lumoti</span>
+              <span>Yo'l Ma'lumoti</span>
             </button>
 
             <div className="flex items-center gap-2.5 bg-red-600 text-white px-4 py-2 rounded-full shadow-md font-black text-sm">

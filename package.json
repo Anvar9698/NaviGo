@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspaces",
+    "dev:api": "npm run dev --workspace=@yol/api",
+    "dev:web": "npm run dev --workspace=@yol/web",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces"
   },

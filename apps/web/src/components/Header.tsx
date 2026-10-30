@@ -148,15 +148,6 @@ export const Header: React.FC = () => {
 
       {/* 3. Right Action Controls */}
       <div className="flex items-center gap-2.5">
-        {/* Tez yordam 103 Quick Link */}
-        <a
-          href="#/ambulance"
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/60 shadow-soft text-xs font-bold transition-all"
-        >
-          <span>🚑</span>
-          <span className="hidden sm:inline">Tez yordam 103</span>
-        </a>
-
         {/* Language Switcher */}
         <div className="flex items-center bg-white dark:bg-darkCard p-1 rounded-full shadow-soft border border-yolBorder dark:border-darkBorder">
           {locales.map((l) => (

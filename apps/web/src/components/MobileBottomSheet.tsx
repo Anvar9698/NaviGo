@@ -28,16 +28,26 @@ export const MobileBottomSheet: React.FC = () => {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center">
-      {/* Floating "+ Report" button on Mobile */}
-      <button
-        onClick={() => setIsReportingOpen(true)}
-        className="mb-3 flex items-center gap-2 bg-blackPill text-white px-5 py-3 rounded-full shadow-float font-bold text-sm border border-gray-700"
-      >
-        <div className="w-5 h-5 rounded-full bg-accentOrange flex items-center justify-center text-white">
-          <Plus className="w-4 h-4 stroke-[3]" />
-        </div>
-        <span>{t('map.reportProblem')}</span>
-      </button>
+      {/* Floating Buttons on Mobile: 103 Ambulance & Report Problem */}
+      <div className="mb-3 flex items-center gap-2">
+        <a
+          href="#/ambulance"
+          className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-3 rounded-full shadow-float font-extrabold text-sm border border-red-700 active:scale-95 transition-all"
+        >
+          <span>🚑</span>
+          <span>103 Tez Yordam</span>
+        </a>
+
+        <button
+          onClick={() => setIsReportingOpen(true)}
+          className="flex items-center gap-2 bg-blackPill text-white px-4 py-3 rounded-full shadow-float font-bold text-sm border border-gray-700 active:scale-95 transition-all"
+        >
+          <div className="w-5 h-5 rounded-full bg-accentOrange flex items-center justify-center text-white">
+            <Plus className="w-4 h-4 stroke-[3]" />
+          </div>
+          <span>{t('map.reportProblem')}</span>
+        </button>
+      </div>
 
       {/* Bottom Sheet Card */}
       <div className="w-full bg-white dark:bg-darkCard rounded-t-[28px] shadow-float border-t border-yolBorder dark:border-darkBorder transition-all duration-300">
