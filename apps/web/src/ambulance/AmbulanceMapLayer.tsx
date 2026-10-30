@@ -40,52 +40,61 @@ export const AmbulanceMapLayer: React.FC<AmbulanceMapLayerProps> = ({
   }, []);
 
   const setupRouteLayers = (map: maplibregl.Map) => {
-    if (!map.getSource('ambulance-route-source')) {
-      map.addSource('ambulance-route-source', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          properties: {},
-          geometry: {
-            type: 'LineString',
-            coordinates: []
+    try {
+      if (!map.isStyleLoaded()) {
+        map.once('load', () => setupRouteLayers(map));
+        return;
+      }
+
+      if (!map.getSource('ambulance-route-source')) {
+        map.addSource('ambulance-route-source', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: []
+            }
           }
-        }
-      });
-    }
+        });
+      }
 
-    if (!map.getLayer('ambulance-route-casing')) {
-      map.addLayer({
-        id: 'ambulance-route-casing',
-        type: 'line',
-        source: 'ambulance-route-source',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#FFFFFF',
-          'line-width': 8,
-          'line-opacity': 0.8
-        }
-      });
-    }
+      if (!map.getLayer('ambulance-route-casing')) {
+        map.addLayer({
+          id: 'ambulance-route-casing',
+          type: 'line',
+          source: 'ambulance-route-source',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#FFFFFF',
+            'line-width': 8,
+            'line-opacity': 0.8
+          }
+        });
+      }
 
-    if (!map.getLayer('ambulance-route-line')) {
-      map.addLayer({
-        id: 'ambulance-route-line',
-        type: 'line',
-        source: 'ambulance-route-source',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round'
-        },
-        paint: {
-          'line-color': '#EF4444', // Emergency red
-          'line-width': 5,
-          'line-opacity': 0.95
-        }
-      });
+      if (!map.getLayer('ambulance-route-line')) {
+        map.addLayer({
+          id: 'ambulance-route-line',
+          type: 'line',
+          source: 'ambulance-route-source',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#EF4444', // Emergency red
+            'line-width': 5,
+            'line-opacity': 0.95
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Map layer setup deferred:', e);
     }
   };
 
@@ -116,27 +125,31 @@ export const AmbulanceMapLayer: React.FC<AmbulanceMapLayerProps> = ({
     const map = mapRef.current;
     if (!map) return;
 
-    const source = map.getSource('ambulance-route-source') as maplibregl.GeoJSONSource;
-    if (!source) return;
+    try {
+      const source = map.getSource('ambulance-route-source') as maplibregl.GeoJSONSource;
+      if (!source) return;
 
-    if (activeRequest && activeRequest.routeGeometry && activeRequest.routeGeometry.length > 0) {
-      source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: activeRequest.routeGeometry
-        }
-      });
-    } else {
-      source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: []
-        }
-      });
+      if (activeRequest && activeRequest.routeGeometry && activeRequest.routeGeometry.length > 0) {
+        source.setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: activeRequest.routeGeometry
+          }
+        });
+      } else {
+        source.setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        });
+      }
+    } catch (e) {
+      // Ignored
     }
   }, [activeRequest?.routeGeometry]);
 
