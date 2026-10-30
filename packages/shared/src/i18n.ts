@@ -46,7 +46,31 @@ export const TRANSLATIONS = {
       sourceAttribution: "Ma'lumot manbasi: Open-Meteo",
       wind: "Shamol",
       humidity: "Namlik",
-      precipitation: "Yog'ingarchilik"
+      precipitation: "Yog'ingarchilik",
+      districtsOverlay: "Toshkent tumanlari bo'yicha ob-havo va havo sifati",
+      districtAir: "Havo sifati",
+      viewDetails: "Batafsil ma'lumot"
+    },
+    navigation: {
+      routeTitle: "Marshrut tuzish",
+      modes: {
+        car: "Avtomobil",
+        transit: "Avtobus",
+        bike: "Velosiped",
+        walk: "Piyoda"
+      },
+      startNav: "Boshlash (Go)",
+      stopNav: "To'xtatish",
+      nearestRoads: "Manzil atrofidagi asosiy yo'llar",
+      routeHazards: "Yo'nalishdagi hodisalar",
+      noHazards: "Yo'lda to'siqlar yo'q, xavfsiz harakatlanish mumkin",
+      nextManeuver: "Keyingi harakat",
+      distanceLeft: "Qolgan masofa",
+      eta: "Yetib borish vaqti",
+      soundOn: "Ovozli yo'naltirish yoqilgan",
+      soundOff: "Ovozli yo'naltirish o'chirilgan",
+      turnByTurn: "Bosqichma-bosqich ko'rsatmalar",
+      arrived: "Siz manzilga yetib keldingiz!"
     },
     roads: {
       title: "Yaqiningizdagi yo'l holati",
@@ -244,7 +268,31 @@ export const TRANSLATIONS = {
       sourceAttribution: "Источник: Open-Meteo",
       wind: "Ветер",
       humidity: "Влажность",
-      precipitation: "Осадки"
+      precipitation: "Осадки",
+      districtsOverlay: "Погода и качество воздуха по районам Ташкента",
+      districtAir: "Воздух",
+      viewDetails: "Подробнее"
+    },
+    navigation: {
+      routeTitle: "Маршрут",
+      modes: {
+        car: "Авто",
+        transit: "Автобус",
+        bike: "Велосипед",
+        walk: "Пешком"
+      },
+      startNav: "Поехали (Go)",
+      stopNav: "Завершить",
+      nearestRoads: "Ближайшие улицы у места назначения",
+      routeHazards: "Препятствия на маршруте",
+      noHazards: "Препятствий нет, маршрут безопасен",
+      nextManeuver: "Следующий маневр",
+      distanceLeft: "Осталось",
+      eta: "Время в пути",
+      soundOn: "Голосовые подсказки включены",
+      soundOff: "Голосовые подсказки выключены",
+      turnByTurn: "Пошаговые указания",
+      arrived: "Вы прибыли в пункт назначения!"
     },
     roads: {
       title: "Дорожная обстановка рядом",
@@ -442,7 +490,31 @@ export const TRANSLATIONS = {
       sourceAttribution: "Source: Open-Meteo",
       wind: "Wind",
       humidity: "Humidity",
-      precipitation: "Precipitation"
+      precipitation: "Precipitation",
+      districtsOverlay: "Tashkent District Weather & Air Quality",
+      districtAir: "Air",
+      viewDetails: "View details"
+    },
+    navigation: {
+      routeTitle: "Route Directions",
+      modes: {
+        car: "Car",
+        transit: "Transit",
+        bike: "Bicycle",
+        walk: "Walk"
+      },
+      startNav: "Start (Go)",
+      stopNav: "Stop Navigation",
+      nearestRoads: "Nearest roads to destination",
+      routeHazards: "Hazards along route",
+      noHazards: "Route is clear with no verified closures",
+      nextManeuver: "Next maneuver",
+      distanceLeft: "Distance left",
+      eta: "ETA",
+      soundOn: "Voice guidance on",
+      soundOff: "Voice guidance off",
+      turnByTurn: "Turn-by-turn directions",
+      arrived: "You have arrived at your destination!"
     },
     roads: {
       title: "Roads near you",

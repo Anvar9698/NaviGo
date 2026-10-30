@@ -150,13 +150,17 @@ export interface RouteStep {
   instruction: string;
   distanceMeters: number;
   durationSeconds: number;
+  maneuverType?: 'turn-right' | 'turn-left' | 'straight' | 'u-turn' | 'arrive';
 }
 
 export interface RouteResult {
+  destinationName?: string;
   distanceMeters: number;
   durationMinutes: number;
-  mode: 'walk' | 'transit' | 'car';
+  mode: 'walk' | 'transit' | 'car' | 'bike';
   coordinates: [number, number][]; // [lon, lat]
   steps: RouteStep[];
   warnings: string[];
+  nearbyRoads?: string[];
+  nearbyIncidentsCount?: number;
 }

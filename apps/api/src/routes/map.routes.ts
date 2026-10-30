@@ -45,6 +45,21 @@ mapRouter.get('/air-quality', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/v1/map/districts-weather - Mode A District Weather Points for Tashkent
+mapRouter.get('/districts-weather', async (req: Request, res: Response) => {
+  const districts = [
+    { name: 'Yunusobod District', lat: 41.3644, lon: 69.2882, temp: 19, aqi: 28, aqiLevel: 'Good', wind: 8 },
+    { name: 'Chilonzor District', lat: 41.2725, lon: 69.2045, temp: 20, aqi: 35, aqiLevel: 'Moderate', wind: 11 },
+    { name: "Mirzo Ulug'bek District", lat: 41.3350, lon: 69.3400, temp: 19, aqi: 26, aqiLevel: 'Good', wind: 7 },
+    { name: 'Shayxontohur (Chorsu)', lat: 41.3274, lon: 69.2346, temp: 20, aqi: 38, aqiLevel: 'Moderate', wind: 10 },
+    { name: 'Sergeli District', lat: 41.2215, lon: 69.2155, temp: 21, aqi: 42, aqiLevel: 'Moderate', wind: 12 },
+    { name: 'Mirobod District', lat: 41.2980, lon: 69.2850, temp: 20, aqi: 34, aqiLevel: 'Moderate', wind: 9 },
+    { name: 'Yakkasaroy District', lat: 41.2850, lon: 69.2550, temp: 20, aqi: 31, aqiLevel: 'Good', wind: 9 }
+  ];
+
+  return res.json({ districts });
+});
+
 // GET /api/v1/map/geocode - Search addresses and places via OSM Nominatim
 mapRouter.get('/geocode', async (req: Request, res: Response) => {
   try {
@@ -64,13 +79,14 @@ mapRouter.get('/route', async (req: Request, res: Response) => {
     const startLon = parseFloat(req.query.startLon as string);
     const endLat = parseFloat(req.query.endLat as string);
     const endLon = parseFloat(req.query.endLon as string);
-    const mode = (req.query.mode as 'walk' | 'transit' | 'car') || 'car';
+    const mode = (req.query.mode as 'walk' | 'transit' | 'bike' | 'car') || 'car';
+    const destinationName = (req.query.destinationName as string) || undefined;
 
     if (isNaN(startLat) || isNaN(startLon) || isNaN(endLat) || isNaN(endLon)) {
       return res.status(400).json({ error: 'Invalid coordinate parameters' });
     }
 
-    const route = await calculateRoute(startLat, startLon, endLat, endLon, mode);
+    const route = await calculateRoute(startLat, startLon, endLat, endLon, mode, destinationName);
     return res.json(route);
   } catch (err: any) {
     return res.status(500).json({ error: 'Route calculation failed', message: err.message });

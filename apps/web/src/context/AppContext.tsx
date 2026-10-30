@@ -13,6 +13,7 @@ import {
 export type AppTheme = 'light' | 'dark' | 'high-contrast';
 export type MapDisplayMode = 'combined' | 'weather' | 'roads';
 export type AppNavTab = 'map' | 'my-reports' | 'help' | 'settings' | 'editor' | 'admin' | 'analyst';
+export type TravelMode = 'car' | 'transit' | 'bike' | 'walk';
 
 export interface AppNotification {
   id: string;
@@ -23,6 +24,16 @@ export interface AppNotification {
   isRead: boolean;
   latitude?: number;
   longitude?: number;
+}
+
+export interface DistrictWeather {
+  name: string;
+  lat: number;
+  lon: number;
+  temp: number;
+  aqi: number;
+  aqiLevel: 'Good' | 'Moderate' | 'Unhealthy';
+  wind: number;
 }
 
 interface AppContextType {
@@ -66,8 +77,26 @@ interface AppContextType {
   userReports: Report[];
   weather: WeatherData | null;
   airQuality: AirQualityData | null;
+  districtsWeather: DistrictWeather[];
+  selectedDistrict: DistrictWeather | null;
+  setSelectedDistrict: (d: DistrictWeather | null) => void;
+  
+  // Navigation & Multi-Modal Routing
+  travelMode: TravelMode;
+  setTravelMode: (m: TravelMode) => void;
   activeRoute: RouteResult | null;
   setActiveRoute: (route: RouteResult | null) => void;
+  isNavigating: boolean;
+  setIsNavigating: (nav: boolean) => void;
+  currentNavStep: number;
+  setCurrentNavStep: (step: number) => void;
+  isVoiceMuted: boolean;
+  setIsVoiceMuted: (muted: boolean) => void;
+  startNavigation: () => void;
+  stopNavigation: () => void;
+  speakInstruction: (text: string) => void;
+  requestRoute: (destLat: number, destLon: number, mode?: TravelMode, destName?: string) => Promise<void>;
+
   refreshData: () => Promise<void>;
   fetchUserReports: () => Promise<void>;
 }
@@ -118,7 +147,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [userReports, setUserReports] = useState<Report[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
+  const [districtsWeather, setDistrictsWeather] = useState<DistrictWeather[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState<DistrictWeather | null>(null);
+
+  // Routing & Navigation states
+  const [travelMode, setTravelMode] = useState<TravelMode>('car');
   const [activeRoute, setActiveRoute] = useState<RouteResult | null>(null);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [currentNavStep, setCurrentNavStep] = useState(0);
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
@@ -239,12 +276,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  // Speech synthesis for Voice Navigation
+  const speakInstruction = (text: string) => {
+    if (isVoiceMuted || typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = locale === 'ru' ? 'ru-RU' : locale === 'en' ? 'en-US' : 'uz-UZ';
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Request Route with given mode
+  const requestRoute = async (destLat: number, destLon: number, mode = travelMode, destName?: string) => {
+    try {
+      const url = `/api/v1/map/route?startLat=${userCoords.lat}&startLon=${userCoords.lon}&endLat=${destLat}&endLon=${destLon}&mode=${mode}&destinationName=${encodeURIComponent(destName || '')}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const routeData: RouteResult = await res.json();
+        setActiveRoute(routeData);
+        setCurrentNavStep(0);
+      }
+    } catch (err) {
+      console.warn('Error fetching route:', err);
+    }
+  };
+
+  // Start active navigation
+  const startNavigation = () => {
+    if (!activeRoute || activeRoute.steps.length === 0) return;
+    setIsNavigating(true);
+    setCurrentNavStep(0);
+    const firstStep = activeRoute.steps[0];
+    speakInstruction(firstStep.instruction);
+  };
+
+  // Stop active navigation
+  const stopNavigation = () => {
+    setIsNavigating(false);
+    setCurrentNavStep(0);
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
   const refreshData = async () => {
     try {
-      const [featRes, wRes, aqRes] = await Promise.all([
+      const [featRes, wRes, aqRes, distRes] = await Promise.all([
         fetch('/api/v1/map/features'),
         fetch(`/api/v1/map/weather?lat=${userCoords.lat}&lon=${userCoords.lon}`),
-        fetch(`/api/v1/map/air-quality?lat=${userCoords.lat}&lon=${userCoords.lon}`)
+        fetch(`/api/v1/map/air-quality?lat=${userCoords.lat}&lon=${userCoords.lon}`),
+        fetch('/api/v1/map/districts-weather')
       ]);
 
       if (featRes.ok) {
@@ -258,6 +340,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (aqRes.ok) {
         const aqData = await aqRes.json();
         setAirQuality(aqData);
+      }
+      if (distRes.ok) {
+        const distData = await distRes.json();
+        setDistrictsWeather(distData.districts || []);
       }
 
       if (token) {
@@ -315,8 +401,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         userReports,
         weather,
         airQuality,
+        districtsWeather,
+        selectedDistrict,
+        setSelectedDistrict,
+
+        // Routing & Navigation
+        travelMode,
+        setTravelMode,
         activeRoute,
         setActiveRoute,
+        isNavigating,
+        setIsNavigating,
+        currentNavStep,
+        setCurrentNavStep,
+        isVoiceMuted,
+        setIsVoiceMuted,
+        startNavigation,
+        stopNavigation,
+        speakInstruction,
+        requestRoute,
+
         refreshData,
         fetchUserReports
       }}
