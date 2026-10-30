@@ -26,8 +26,9 @@ import {
 } from 'lucide-react';
 import { MapFeature, Report } from '@yol/shared';
 import { DistrictWeather } from '../context/AppContext';
+import { mapRegistry } from '../lib/mapRegistry';
 
-export const MapContainer: React.FC = () => {
+export const MapContainer: React.FC<{ variant?: 'default' | 'bare' }> = ({ variant = 'default' }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -112,8 +113,10 @@ export const MapContainer: React.FC = () => {
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
     mapRef.current = map;
+    mapRegistry.register(map);
 
     return () => {
+      mapRegistry.register(null);
       map.remove();
       mapRef.current = null;
     };
@@ -154,6 +157,11 @@ export const MapContainer: React.FC = () => {
       .setLngLat([userCoords.lon, userCoords.lat])
       .addTo(mapRef.current);
     markersRef.current.push(userMarker);
+
+    // If bare variant, skip weather, road-incident and report markers
+    if (variant === 'bare') {
+      return;
+    }
 
     // 2. Weather & Air Quality District Pins (Mode A or Combined)
     if (mapMode === 'weather' || mapMode === 'combined') {
@@ -399,52 +407,54 @@ export const MapContainer: React.FC = () => {
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* 2. Top-Right Map Mode Pill Switcher */}
-      <div className="absolute top-4 right-4 z-10 flex items-center bg-white dark:bg-darkCard p-1.5 rounded-full shadow-soft border border-yolBorder dark:border-darkBorder">
-        <button
-          onClick={() => {
-            setMapMode('combined');
-            setSelectedDistrict(null);
-          }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-            mapMode === 'combined'
-              ? 'bg-blackPill text-white'
-              : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>{t('map.modeCombined')}</span>
-        </button>
+      {variant !== 'bare' && (
+        <div className="absolute top-4 right-4 z-10 flex items-center bg-white dark:bg-darkCard p-1.5 rounded-full shadow-soft border border-yolBorder dark:border-darkBorder">
+          <button
+            onClick={() => {
+              setMapMode('combined');
+              setSelectedDistrict(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              mapMode === 'combined'
+                ? 'bg-blackPill text-white'
+                : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>{t('map.modeCombined')}</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setMapMode('weather');
-            setSelectedFeature(null);
-          }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-            mapMode === 'weather'
-              ? 'bg-blackPill text-white'
-              : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
-          }`}
-        >
-          <CloudSun className="w-3.5 h-3.5 text-accentOrange" />
-          <span>{t('map.modeA')}</span>
-        </button>
+          <button
+            onClick={() => {
+              setMapMode('weather');
+              setSelectedFeature(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              mapMode === 'weather'
+                ? 'bg-blackPill text-white'
+                : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
+            }`}
+          >
+            <CloudSun className="w-3.5 h-3.5 text-accentOrange" />
+            <span>{t('map.modeA')}</span>
+          </button>
 
-        <button
-          onClick={() => {
-            setMapMode('roads');
-            setSelectedDistrict(null);
-          }}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-            mapMode === 'roads'
-              ? 'bg-blackPill text-white'
-              : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
-          }`}
-        >
-          <Car className="w-3.5 h-3.5 text-accentOrange" />
-          <span>{t('map.modeB')}</span>
-        </button>
-      </div>
+          <button
+            onClick={() => {
+              setMapMode('roads');
+              setSelectedDistrict(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+              mapMode === 'roads'
+                ? 'bg-blackPill text-white'
+                : 'text-textSecondary dark:text-darkTextSec hover:text-textPrimary'
+            }`}
+          >
+            <Car className="w-3.5 h-3.5 text-accentOrange" />
+            <span>{t('map.modeB')}</span>
+          </button>
+        </div>
+      )}
 
       {/* 3. Turn-by-Turn Navigation HUD Overlay (Requirement) */}
       {isNavigating && activeRoute && currentStep && (
@@ -550,15 +560,17 @@ export const MapContainer: React.FC = () => {
       )}
 
       {/* 5. Bottom-Left Controls: Legend & List Alternative */}
-      <div className="absolute bottom-6 left-6 z-10 flex items-center gap-2">
-        <button
-          onClick={() => setIsLegendOpen(true)}
-          className="flex items-center gap-2 bg-white dark:bg-darkCard px-4 py-2.5 rounded-full shadow-soft border border-yolBorder dark:border-darkBorder text-textPrimary dark:text-darkText hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-semibold transition-all"
-        >
-          <HelpCircle className="w-4 h-4 text-accentOrange" />
-          <span>{t('map.whatMean')}</span>
-        </button>
-      </div>
+      {variant !== 'bare' && (
+        <div className="absolute bottom-6 left-6 z-10 flex items-center gap-2">
+          <button
+            onClick={() => setIsLegendOpen(true)}
+            className="flex items-center gap-2 bg-white dark:bg-darkCard px-4 py-2.5 rounded-full shadow-soft border border-yolBorder dark:border-darkBorder text-textPrimary dark:text-darkText hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-semibold transition-all"
+          >
+            <HelpCircle className="w-4 h-4 text-accentOrange" />
+            <span>{t('map.whatMean')}</span>
+          </button>
+        </div>
+      )}
 
       {/* 6. Bottom-Right Controls: Recenter & Report Problem */}
       <div className="absolute bottom-6 right-6 z-10 flex items-center gap-3">
@@ -570,15 +582,17 @@ export const MapContainer: React.FC = () => {
           <Navigation className="w-6 h-6 text-accentOrange" />
         </button>
 
-        <button
-          onClick={() => setIsReportingOpen(true)}
-          className="flex items-center gap-3 bg-blackPill text-white px-6 py-4 rounded-full shadow-float hover:bg-blackPillHover transition-all text-base font-bold group border border-gray-800"
-        >
-          <div className="w-7 h-7 rounded-full bg-accentOrange flex items-center justify-center text-white">
-            <Plus className="w-5 h-5 stroke-[3]" />
-          </div>
-          <span>{t('map.reportProblem')}</span>
-        </button>
+        {variant !== 'bare' && (
+          <button
+            onClick={() => setIsReportingOpen(true)}
+            className="flex items-center gap-3 bg-blackPill text-white px-6 py-4 rounded-full shadow-float hover:bg-blackPillHover transition-all text-base font-bold group border border-gray-800"
+          >
+            <div className="w-7 h-7 rounded-full bg-accentOrange flex items-center justify-center text-white">
+              <Plus className="w-5 h-5 stroke-[3]" />
+            </div>
+            <span>{t('map.reportProblem')}</span>
+          </button>
+        )}
       </div>
 
       {/* 7. Selected District Weather Popover Card (Mode A Fix) */}

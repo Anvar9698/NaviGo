@@ -10,6 +10,7 @@ import { editorRouter } from './routes/editor.routes';
 import { adminRouter } from './routes/admin.routes';
 import { analyticsRouter } from './routes/analytics.routes';
 import { supportRouter } from './routes/support.routes';
+import { ambulanceRouter } from './routes/ambulance.routes';
 
 const app = express();
 
@@ -66,7 +67,14 @@ app.get('/api/v1/openapi.json', (req: Request, res: Response) => {
       '/admin/map-changes/{id}/approve': { post: { summary: 'Approve and publish map change' } },
       '/admin/features/{id}/rollback': { post: { summary: 'One-click rollback of map feature' } },
       '/analytics/overview': { get: { summary: 'Aggregated analytics for analysts' } },
-      '/support/chat': { post: { summary: 'AI assistant road advisory' } }
+      '/support/chat': { post: { summary: 'AI assistant road advisory' } },
+      '/ambulance/state': { get: { summary: 'Polled live state for citizen, dispatcher, driver, or analyst' } },
+      '/ambulance/requests': { post: { summary: 'Create emergency ambulance dispatch request' } },
+      '/ambulance/requests/{id}/accept': { post: { summary: 'Dispatcher accepts emergency call and assigns fastest unit' } },
+      '/ambulance/requests/{id}/go': { post: { summary: 'Driver initiates transit to emergency scene' } },
+      '/ambulance/requests/{id}/onscene': { post: { summary: 'Driver reports arrival on scene' } },
+      '/ambulance/requests/{id}/complete': { post: { summary: 'Driver closes emergency call' } },
+      '/ambulance/stats': { get: { summary: 'Get aggregated dispatch performance and minutes saved' } }
     }
   });
 });
@@ -79,6 +87,7 @@ app.use('/api/v1/editor', editorRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/support', supportRouter);
+app.use('/api/v1/ambulance', ambulanceRouter);
 
 // Global Error Handler (Hides internal stack traces in production)
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

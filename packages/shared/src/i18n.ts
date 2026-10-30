@@ -220,6 +220,59 @@ export const TRANSLATIONS = {
       next: "Keyingisi",
       save: "Saqlash",
       cancel: "Bekor qilish"
+    },
+    ambulance: {
+      title: "Tez yordam 103",
+      tagline: "Shoshilinch tibbiy yordam dispetcherlik tizimi",
+      backToMain: "Yo'l Ma'lumotiga qaytish",
+      call103Now: "103 ga qo'ng'iroq qilish",
+      pilotNotice: "Eslatma: Ushbu raqamli tizim sinov tariqasida ishlamoqda va telefon orqali 103 ga qo'ng'iroq qilish o'rnini to'liq bosmaydi. Hayot uchun xavf bo'lsa, zudlik bilan 103 ga qo'ng'iroq qiling!",
+      citizen: {
+        describeEmergency: "Nima sodir bo'ldi?",
+        describePlaceholder: "Bemor holatini yoki hodisani yozing (masalan: hushidan ketgan, ko'krak qafasida og'riq, qon ketishi)...",
+        selectSeverity: "Xavf darajasi",
+        severity1: "1 — Hayot uchun xavfli",
+        severity2: "2 — Jiddiy holat",
+        severity3: "3 — Shoshilinch emas",
+        confirmLocation: "Hodisa joyini xaritada tasdiqlang",
+        sendRequest: "Tez yordam chaqirish",
+        activeCallTitle: "Chaqiruv holati",
+        waitingAcceptance: "Yaqin shifoxona dispetcheri chaqiruvni qabul qilishi kutilmoqda...",
+        assignedUnit: "Biriktirilgan mashina",
+        enroute: "Tez yordam yo'lda kelmoqda",
+        onscene: "Tez yordam yetib keldi",
+        resolved: "Chaqiruv yakunlandi",
+        unassigned: "Hozirda bo'sh tez yordam mashinasi topilmadi. Iltimos, zudlik bilan 103 raqamiga telefon qiling!",
+        cancelRequest: "Chaqiruvni bekor qilish",
+        minutesSaved: "Vaqt tejandi",
+        liveTracker: "Jonli xaritada kuzatish"
+      },
+      dispatcher: {
+        inboxTitle: "Dispetcher qabuli",
+        timeoutSecondsLeft: "soniya qoldi",
+        accept: "Qabul qilish",
+        decline: "Rad etish / Boshqa shifoxonaga uzatish",
+        activeCalls: "Faol chaqiruvlar",
+        fleetOverview: "Mashinalar parki",
+        freeUnits: "Bo'sh mashinalar",
+        noPending: "Kutilayotgan shoshilinch chaqiruvlar yo'q"
+      },
+      driver: {
+        title: "Tez yordam haydovchisi",
+        previewTitle: "Yo'nalishni ko'rish",
+        goButton: "KETDIK (GO)",
+        navigationTitle: "Navigatsiya",
+        arrivedOnScene: "Yetib keldik (On Scene)",
+        completeCall: "Chaqiruvni yakunlash (Baza)",
+        hazardNotice: "Yo'lda to'siq yoki ta'mir aniqlandi"
+      },
+      stats: {
+        title: "Tez yordam statistikasi",
+        totalCalls: "Jami chaqiruvlar",
+        activeCalls: "Faol chaqiruvlar",
+        avgSaved: "O'rtacha tejalgan vaqt",
+        baselinePenalty: "Navbat jarimasi asosi"
+      }
     }
   },
 
@@ -442,6 +495,59 @@ export const TRANSLATIONS = {
       next: "Далее",
       save: "Сохранить",
       cancel: "Отмена"
+    },
+    ambulance: {
+      title: "Скорая помощь 103",
+      tagline: "Диспетчерская служба экстренной медицинской помощи",
+      backToMain: "Вернуться в Yo'l Ma'lumoti",
+      call103Now: "Позвонить 103 сейчас",
+      pilotNotice: "Внимание: Эта цифровая система работает в пилотном режиме и не заменяет вызов по телефону 103. При угрозе жизни немедленно звоните по номеру 103!",
+      citizen: {
+        describeEmergency: "Что произошло?",
+        describePlaceholder: "Опишите состояние пациента (например: потеря сознания, боль в груди, кровотечение)...",
+        selectSeverity: "Степень тяжести",
+        severity1: "1 — Угроза жизни",
+        severity2: "2 — Тяжелое состояние",
+        severity3: "3 — Не экстренно",
+        confirmLocation: "Подтвердите место происшествия на карте",
+        sendRequest: "Вызвать скорую",
+        activeCallTitle: "Статус вызова",
+        waitingAcceptance: "Ожидание подтверждения диспетчером ближайшей больницы...",
+        assignedUnit: "Назначенный экипаж",
+        enroute: "Скорая в пути",
+        onscene: "Скорая прибыла на место",
+        resolved: "Вызов завершен",
+        unassigned: "Свободных карет скорой помощи не найдено. Пожалуйста, срочно позвоните по номеру 103!",
+        cancelRequest: "Отменить вызов",
+        minutesSaved: "Сэкономлено времени",
+        liveTracker: "Отслеживание на карте"
+      },
+      dispatcher: {
+        inboxTitle: "Прием вызовов диспетчером",
+        timeoutSecondsLeft: "сек. осталось",
+        accept: "Принять вызов",
+        decline: "Отклонить / Передать другой больнице",
+        activeCalls: "Активные вызовы",
+        fleetOverview: "Автопарк",
+        freeUnits: "Свободные кареты",
+        noPending: "Нет ожидающих экстренных вызовов"
+      },
+      driver: {
+        title: "Водитель скорой помощи",
+        previewTitle: "Просмотр маршрута",
+        goButton: "ПОЕХАЛИ (GO)",
+        navigationTitle: "Навигация",
+        arrivedOnScene: "Прибыли на место (On Scene)",
+        completeCall: "Завершить вызов (На базу)",
+        hazardNotice: "На маршруте обнаружено препятствие или ремонт"
+      },
+      stats: {
+        title: "Статистика скорой помощи",
+        totalCalls: "Всего вызовов",
+        activeCalls: "Активные вызовы",
+        avgSaved: "Среднее сэкономленное время",
+        baselinePenalty: "Базовый штраф очереди"
+      }
     }
   },
 
@@ -664,6 +770,59 @@ export const TRANSLATIONS = {
       next: "Next",
       save: "Save",
       cancel: "Cancel"
+    },
+    ambulance: {
+      title: "Ambulance 103",
+      tagline: "Emergency Medical Dispatch Platform",
+      backToMain: "Back to Yo'l Ma'lumoti",
+      call103Now: "Call 103 Now",
+      pilotNotice: "Notice: This digital pilot is experimental and does not replace calling 103 by phone. If life or health is in danger, dial 103 immediately!",
+      citizen: {
+        describeEmergency: "What is happening?",
+        describePlaceholder: "Describe patient condition (e.g., unconsciousness, chest pain, heavy bleeding)...",
+        selectSeverity: "Severity Level",
+        severity1: "1 — Life-threatening",
+        severity2: "2 — Serious condition",
+        severity3: "3 — Not urgent",
+        confirmLocation: "Confirm emergency location on map",
+        sendRequest: "Request Ambulance",
+        activeCallTitle: "Call Status",
+        waitingAcceptance: "Waiting for nearest hospital dispatcher to accept...",
+        assignedUnit: "Assigned Ambulance",
+        enroute: "Ambulance is en route",
+        onscene: "Ambulance has arrived on scene",
+        resolved: "Call completed",
+        unassigned: "No free ambulances currently available. Please call 103 immediately by phone!",
+        cancelRequest: "Cancel Request",
+        minutesSaved: "Minutes Saved",
+        liveTracker: "Live Map Tracking"
+      },
+      dispatcher: {
+        inboxTitle: "Dispatcher Call Inbox",
+        timeoutSecondsLeft: "sec remaining",
+        accept: "Accept Call",
+        decline: "Decline / Forward to Next Hospital",
+        activeCalls: "Active Calls",
+        fleetOverview: "Fleet Overview",
+        freeUnits: "Available Units",
+        noPending: "No pending emergency calls"
+      },
+      driver: {
+        title: "Ambulance Driver",
+        previewTitle: "Route Preview",
+        goButton: "GO (Start Navigation)",
+        navigationTitle: "Turn-by-Turn Navigation",
+        arrivedOnScene: "Arrived On Scene",
+        completeCall: "Complete Call (Return to Base)",
+        hazardNotice: "Active hazard or closure detected along route"
+      },
+      stats: {
+        title: "Ambulance Telemetry & Stats",
+        totalCalls: "Total Calls",
+        activeCalls: "Active Calls",
+        avgSaved: "Avg. Minutes Saved",
+        baselinePenalty: "Queue Penalty Baseline"
+      }
     }
   }
 };

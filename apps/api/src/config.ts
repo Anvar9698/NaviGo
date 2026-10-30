@@ -10,7 +10,15 @@ export const CONFIG = {
   rateLimits: {
     windowMs: 15 * 60 * 1000,
     maxRequests: 300,
-    reportSubmitMax: 10
+    reportSubmitMax: 10,
+    emergencyMax: 5
+  },
+  ambulance: {
+    acceptTimeoutSeconds: parseInt(process.env.AMBULANCE_ACCEPT_TIMEOUT_SECONDS || '60', 10),
+    queuePenaltySeconds: parseInt(process.env.AMBULANCE_QUEUE_PENALTY_SECONDS || '720', 10),
+    simulateAmbulances: process.env.SIMULATE_AMBULANCES !== 'false',
+    simSpeedup: parseFloat(process.env.AMBULANCE_SIM_SPEEDUP || '8'),
+    retentionDays: parseInt(process.env.AMBULANCE_RETENTION_DAYS || '30', 10)
   },
   defaultLocation: {
     city: 'Tashkent',

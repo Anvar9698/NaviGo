@@ -246,6 +246,24 @@ export const AuthModal: React.FC = () => {
                   <span className="text-xs font-bold block text-textPrimary dark:text-darkText">Citizen User</span>
                   <span className="text-[10px] text-textSecondary">citizen@yol.uz</span>
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('dispatcher@103.uz')}
+                  className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-left hover:border-red-500 transition-colors"
+                >
+                  <span className="text-xs font-bold block text-red-700 dark:text-red-300">Dispetcher 103</span>
+                  <span className="text-[10px] text-textSecondary">dispatcher@103.uz</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('driver@103.uz')}
+                  className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-left hover:border-red-500 transition-colors"
+                >
+                  <span className="text-xs font-bold block text-red-700 dark:text-red-300">Haydovchi #101</span>
+                  <span className="text-[10px] text-textSecondary">driver@103.uz</span>
+                </button>
               </div>
             </div>
           </>

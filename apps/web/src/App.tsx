@@ -16,6 +16,7 @@ import { AnalystWorkspace } from './components/AnalystWorkspace';
 import { SettingsModal } from './components/SettingsModal';
 import { ListAlternativeModal } from './components/ListAlternativeModal';
 import { NotificationsModal } from './components/NotificationsModal';
+import { AmbulanceApp } from './ambulance/AmbulanceApp';
 
 export const MainLayout: React.FC = () => {
   return (
@@ -60,9 +61,17 @@ export const MainLayout: React.FC = () => {
 };
 
 export function App() {
+  const [route, setRoute] = React.useState(window.location.hash);
+
+  React.useEffect(() => {
+    const handleHashChange = () => setRoute(window.location.hash);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   return (
     <AppProvider>
-      <MainLayout />
+      {route === '#/ambulance' ? <AmbulanceApp /> : <MainLayout />}
     </AppProvider>
   );
 }
