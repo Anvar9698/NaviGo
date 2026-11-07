@@ -6,6 +6,17 @@ Built for competition presentation, real-world accessibility (WCAG 2.2 AA), and 
 
 ---
 
+> [!IMPORTANT]
+> ### 🏆 Hakamlar hay'ati diqqatiga / Важная информация для жюри / Notice for Competition Judges
+>
+> * 🇺🇿 **O'zbekcha:** Mazkur **NaviGo** platformasi hozircha **faqat O'zbekiston hududi uchun maxsus ishlab chiqilgan** (Metan/Propan kompressor bosimi va navbat telemetriyasi, V2X favqulodda "Yashil Yo'lak" radari, 103/102/101/104/1050 milliy dispetcherlik tizimi hamda respublika yo'l infratuzilmasi). O'zbekiston hududidan tashqarida loyiha kutilgandek ishlamasligi mumkin. Tizimning barcha aqlli imkoniyatlarini to'laqonli sinab ko'rish uchun **brauzerda GPS joylashuvga (geolokatsiyaga) ruxsat berishni tavsiya etamiz** (yoki qidiruv orqali Toshkent, Samarqand, Buxoro, Andijon, Farg'ona, Namangan kabi shaharlarimizni tanlang).
+>
+> * 🇷🇺 **Русский:** Данная платформа разработана **специально для Республики Узбекистан** (телеметрия давления АГНКС Метан/Пропан, V2X «Зелёный коридор» экстренных служб 103/102/101/104/1050 и республиканская дорожная сеть). За пределами Узбекистана система может работать некорректно. Для корректной проверки и демонстрации всех функций **настоятельно рекомендуем включить GPS (геолокацию)** в браузере или тестировать маршруты внутри городов Узбекистана.
+>
+> * 🇬🇧 **English:** This platform is engineered **specifically for the Republic of Uzbekistan** (real-time CNG/LPG station telemetry, V2X Green Corridor for national 103/102/101/104/1050 emergency response, and localized road infrastructure). The system may not function as intended outside Uzbekistan. For the best evaluation experience, **we strongly recommend enabling GPS / location access** in your browser or selecting locations within Uzbekistan.
+
+---
+
 ## 🌟 Key Competition Highlights & Innovations
 
 1. **⛽ Real-Time Metan (CNG) & Propan (LPG) Smart Monitoring (Uzbekistan First):**
