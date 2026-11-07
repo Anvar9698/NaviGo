@@ -43,7 +43,7 @@ authRouter.post('/register', async (req, res: Response) => {
     });
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role, email: user.email, name: user.name },
       CONFIG.jwtSecret,
       { expiresIn: '24h' }
     );
@@ -74,7 +74,7 @@ authRouter.post('/login', async (req, res: Response) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role, email: user.email, name: user.name },
       CONFIG.jwtSecret,
       { expiresIn: '24h' }
     );

@@ -176,26 +176,25 @@ export const ReportModal: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!user || !token) {
-      setIsAuthOpen(true);
-      return;
-    }
-
     setIsSubmitting(true);
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch('/api/v1/reports', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify({
           category,
           title: title || `${t(`report.categories.${category}`)}`,
-          description,
+          description: description || '',
           latitude: selectedCoords.lat,
           longitude: selectedCoords.lon,
-          severity
+          severity: severity || 'medium'
         })
       });
 
@@ -204,11 +203,13 @@ export const ReportModal: React.FC = () => {
         setSubmittedReportId(data.report.id);
         refreshData();
       } else {
-        alert(t('common.error'));
+        const errData = await res.json().catch(() => null);
+        console.error('Report submission failed:', res.status, errData);
+        alert(errData?.message || errData?.error || t('common.error'));
       }
-    } catch (e) {
-      console.error(e);
-      alert(t('common.error'));
+    } catch (e: any) {
+      console.error('Report submission error:', e);
+      alert(e?.message || t('common.error'));
     } finally {
       setIsSubmitting(false);
     }

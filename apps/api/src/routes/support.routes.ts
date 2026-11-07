@@ -64,18 +64,18 @@ supportRouter.post('/chat', (req: AuthenticatedRequest, res: Response) => {
   } else {
     // Helpful general assistant response
     if (lang === 'uz') {
-      aiText = "Assalomu alaykum! Men Yo'l Ma'lumoti sun'iy intellekt yordamchisiman. Sizga yo'l holati, ob-havo yoki ilovadan foydalanish bo'yicha ma'lumot bera olaman. Agar inson bilan gaplashmoqchi bo'lsangiz, 'Xodim bilan bog'lanish' tugmasini bosing.";
+      aiText = "Assalomu alaykum! Men NaviGo sun'iy intellekt yordamchisiman. Sizga yo'l holati, navigatsiya, ob-havo yoki favqulodda xizmatlar bo'yicha ma'lumot bera olaman. Agar inson bilan gaplashmoqchi bo'lsangiz, 'Xodim bilan bog'lanish' tugmasini bosing.";
     } else if (lang === 'ru') {
-      aiText = "Здравствуйте! Я ИИ-помощник сервиса «Йўл Маълумоти». Я могу подсказать информацию о дорогах, погоде или помочь с подачей отчета. Вы также можете нажать «Поговорить с человеком» в любой момент.";
+      aiText = "Здравствуйте! Я ИИ-помощник сервиса NaviGo. Я могу подсказать информацию о дорогах, навигации, погоде или помочь с вызовом экстренных служб. Вы также можете нажать «Поговорить с человеком» в любой момент.";
     } else {
-      aiText = "Hello! I am the Yol Ma'lumoti AI support assistant. I can help explain road conditions, weather data, or help submit a report. You can also tap 'Talk to a person' at any time.";
+      aiText = "Hello! I am the NaviGo AI support assistant. I can help explain road conditions, navigation, weather data, or emergency services. You can also tap 'Talk to a person' at any time.";
     }
   }
 
   const aiMsg = dbStore.addSupportMessage(conversationId, {
     conversationId,
     senderType: 'AI_ASSISTANT',
-    senderName: 'Yol AI Assistant',
+    senderName: 'NaviGo AI',
     text: aiText
   });
 

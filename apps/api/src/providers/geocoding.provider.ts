@@ -72,13 +72,19 @@ export async function searchPlaces(query: string): Promise<GeocodeResult[]> {
       message: 'Network error or rate limit'
     });
 
-    // Provide localized fallback suggestions for common Tashkent destinations
+    // Provide localized fallback suggestions for common destinations
     const mockTashkentLocations: GeocodeResult[] = [
       {
         displayName: 'Amir Temur Square, Yunusobod District, Tashkent',
         latitude: 41.3111,
         longitude: 69.2797,
         type: 'square'
+      },
+      {
+        displayName: 'Chust shahri, Namangan viloyati',
+        latitude: 41.0069,
+        longitude: 71.2294,
+        type: 'city'
       },
       {
         displayName: 'Chorsu Bazaar, Shayxontohur District, Tashkent',
@@ -97,6 +103,18 @@ export async function searchPlaces(query: string): Promise<GeocodeResult[]> {
         latitude: 41.2581,
         longitude: 69.2812,
         type: 'aeroway'
+      },
+      {
+        displayName: 'Registon maydoni, Samarqand shahri',
+        latitude: 39.6548,
+        longitude: 66.9757,
+        type: 'monument'
+      },
+      {
+        displayName: 'Chorvoq suv ombori, Bo\'stonliq tumani',
+        latitude: 41.6322,
+        longitude: 70.0272,
+        type: 'lake'
       }
     ];
 

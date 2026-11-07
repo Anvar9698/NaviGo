@@ -1,5 +1,32 @@
-import { RouteResult, RouteStep } from '@yol/shared';
+import { RouteResult, RouteStep, MapFeature, WeatherData, AirQualityData } from '@yol/shared';
 import { dbStore, calculateHaversineDistanceKm } from '../db/store';
+import { fetchWeatherData } from './weather.provider';
+import { fetchAirQualityData } from './airquality.provider';
+
+function isPointNearPolyline(lat: number, lon: number, coords: [number, number][], thresholdKm = 3.5): boolean {
+  if (!coords || coords.length === 0) return false;
+  for (let i = 0; i < coords.length; i++) {
+    const d = calculateHaversineDistanceKm(lat, lon, coords[i][1], coords[i][0]);
+    if (d <= thresholdKm) return true;
+  }
+  for (let i = 0; i < coords.length - 1; i++) {
+    const [lon1, lat1] = coords[i];
+    const [lon2, lat2] = coords[i + 1];
+    const dx = lon2 - lon1;
+    const dy = lat2 - lat1;
+    const lenSq = dx * dx + dy * dy;
+    let t = 0;
+    if (lenSq > 0) {
+      t = Math.max(0, Math.min(1, ((lon - lon1) * dx + (lat - lat1) * dy) / lenSq));
+    }
+    const projLon = lon1 + t * dx;
+    const projLat = lat1 + t * dy;
+    if (calculateHaversineDistanceKm(lat, lon, projLat, projLon) <= thresholdKm) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export async function calculateRoute(
   startLat: number,
@@ -7,7 +34,8 @@ export async function calculateRoute(
   endLat: number,
   endLon: number,
   mode: 'walk' | 'transit' | 'bike' | 'car' = 'car',
-  destinationName?: string
+  destinationName?: string,
+  originName?: string
 ): Promise<RouteResult> {
   const profile = mode === 'walk' ? 'foot' : mode === 'bike' ? 'bicycle' : 'driving';
   // OSRM public demo endpoint supports driving and foot natively, bicycle on select instances. Fall back to driving geometry if needed.
@@ -41,6 +69,17 @@ export async function calculateRoute(
     rawDistance = Math.round(route.distance);
     rawDuration = Math.round(route.duration);
     coordinates = route.geometry.coordinates;
+
+    if (coordinates && coordinates.length > 0) {
+      coordinates[0] = [startLon, startLat];
+      const last = coordinates[coordinates.length - 1];
+      const dist = Math.hypot(last[0] - endLon, last[1] - endLat);
+      if (dist > 0.003) {
+        coordinates.push([endLon, endLat]);
+      } else {
+        coordinates[coordinates.length - 1] = [endLon, endLat];
+      }
+    }
 
     if (route.legs && route.legs[0] && route.legs[0].steps) {
       route.legs[0].steps.forEach((st: any) => {
@@ -90,15 +129,54 @@ export async function calculateRoute(
     });
 
     const distKm = calculateHaversineDistanceKm(startLat, startLon, endLat, endLon);
-    rawDistance = Math.round(distKm * 1000);
-    rawDuration = Math.round((distKm / 30) * 3600); // 30 km/h baseline
+    rawDistance = Math.round(distKm * 1250);
+    rawDuration = Math.round((distKm / 45) * 3600);
 
-    coordinates = [
-      [startLon, startLat],
-      [(startLon * 2 + endLon) / 3, (startLat * 2 + endLat) / 3],
-      [(startLon + endLon * 2) / 3, (startLat + endLat * 2) / 3],
-      [endLon, endLat]
-    ];
+    if (startLon < 70.0 && endLon > 70.3) {
+      // Eastbound towards Fergana Valley (via Ohangaron -> Angren -> Qamchiq Pass)
+      coordinates = [
+        [startLon, startLat],
+        [69.6384, 40.9086],
+        [70.0753, 41.0094],
+        [70.5194, 41.0928],
+        [endLon, endLat]
+      ];
+      roadNames.add('A373 (Toshkent - Ohangaron - Qamchiq)');
+    } else if (startLon > 70.3 && endLon < 70.0) {
+      // Westbound from Fergana Valley towards Tashkent
+      coordinates = [
+        [startLon, startLat],
+        [70.5194, 41.0928],
+        [70.0753, 41.0094],
+        [69.6384, 40.9086],
+        [endLon, endLat]
+      ];
+      roadNames.add('A373 (Qamchiq - Angren - Toshkent)');
+    } else if (startLon > 68.8 && endLon < 68.0) {
+      // Southwest towards Samarkand / Bukhara via M39 Chinoz
+      coordinates = [
+        [startLon, startLat],
+        [68.7510, 40.9412],
+        [(68.7510 + endLon) / 2, (40.9412 + endLat) / 2],
+        [endLon, endLat]
+      ];
+      roadNames.add('M39 (Toshkent - Chinoz - Samarqand)');
+    } else if (startLon < 68.0 && endLon > 68.8) {
+      coordinates = [
+        [startLon, startLat],
+        [(68.7510 + startLon) / 2, (40.9412 + startLat) / 2],
+        [68.7510, 40.9412],
+        [endLon, endLat]
+      ];
+      roadNames.add('M39 (Samarqand - Chinoz - Toshkent)');
+    } else {
+      coordinates = [
+        [startLon, startLat],
+        [(startLon * 2 + endLon) / 3, (startLat * 2 + endLat) / 3],
+        [(startLon + endLon * 2) / 3, (startLat + endLat * 2) / 3],
+        [endLon, endLat]
+      ];
+    }
 
     steps.push(
       {
@@ -144,26 +222,46 @@ export async function calculateRoute(
     finalDurationMinutes = Math.max(Math.round((distKm / 32) * 60) + 3, 2);
   }
 
-  // Detect nearby road incidents along the route coordinates
+  // Detect nearby road incidents along the route coordinates across the entire corridor
   const activeFeatures = dbStore.getActiveMapFeatures();
-  let nearbyIncidentsCount = 0;
+  const routeIncidents: MapFeature[] = [];
   const encounteredHazards: string[] = [];
 
   activeFeatures.forEach(feat => {
-    // Check if within 400 meters of any coordinate on route
-    const isNearRoute = coordinates.some(coord => {
-      const d = calculateHaversineDistanceKm(feat.latitude, feat.longitude, coord[1], coord[0]);
-      return d <= 0.4; // 400m
-    });
-
-    if (isNearRoute) {
-      nearbyIncidentsCount++;
+    if (isPointNearPolyline(feat.latitude, feat.longitude, coordinates, 2.5)) {
+      routeIncidents.push(feat);
       encounteredHazards.push(`${feat.title} (${feat.source})`);
     }
   });
 
+  // Sort incidents by distance along route from start coordinate
+  routeIncidents.sort((a, b) => {
+    const distA = calculateHaversineDistanceKm(startLat, startLon, a.latitude, a.longitude);
+    const distB = calculateHaversineDistanceKm(startLat, startLon, b.latitude, b.longitude);
+    return distA - distB;
+  });
+
+  const nearbyIncidentsCount = routeIncidents.length;
+
   if (encounteredHazards.length > 0) {
-    warnings.unshift(`Alert: ${encounteredHazards.length} road incident(s) detected near your path: ${encounteredHazards.slice(0, 2).join(', ')}.`);
+    warnings.unshift(`Alert: ${encounteredHazards.length} road incident(s) detected along your route: ${encounteredHazards.slice(0, 3).join(', ')}.`);
+  }
+
+  // Fetch destination weather and air quality for active routing
+  let destinationWeather: WeatherData | undefined;
+  let destinationAirQuality: AirQualityData | undefined;
+
+  try {
+    const destCityName = destinationName ? destinationName.split(',')[0].trim() : 'Manzil';
+    destinationWeather = await fetchWeatherData(endLat, endLon, destCityName);
+  } catch (err) {
+    console.warn('Failed to fetch destination weather:', err);
+  }
+
+  try {
+    destinationAirQuality = await fetchAirQualityData(endLat, endLon);
+  } catch (err) {
+    console.warn('Failed to fetch destination air quality:', err);
   }
 
   // Determine nearest roads to destination
@@ -173,6 +271,7 @@ export async function calculateRoute(
   }
 
   return {
+    originName: originName || 'Boshlanish nuqtasi',
     destinationName: destinationName || 'Selected Destination',
     distanceMeters: rawDistance,
     durationMinutes: finalDurationMinutes,
@@ -181,6 +280,9 @@ export async function calculateRoute(
     steps,
     warnings,
     nearbyRoads: nearbyRoadsList.slice(0, 4),
-    nearbyIncidentsCount
+    nearbyIncidentsCount,
+    routeIncidents,
+    destinationWeather,
+    destinationAirQuality
   };
 }

@@ -45,13 +45,13 @@ services:
       dockerfile: infra/Dockerfile.api
     container_name: yol_api
     environment:
-      PORT: 4000
+      PORT: 4001
       NODE_ENV: production
       DATABASE_URL: postgresql://yol_user:yol_password@postgres:5432/yol_malumoti
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev_secret_change_in_prod
     ports:
-      - "4000:4000"
+      - "4001:4001"
     depends_on:
       postgres:
         condition: service_healthy

@@ -113,8 +113,8 @@ class ResilientDataStore {
       {
         id: 'feat-1',
         featureType: 'accident',
-        title: 'Collision near Amir Temur Square',
-        description: 'Two cars blocking right lane. Police and emergency service on site.',
+        title: "Amir Temur xiyoboni yaqinida YTH / To'qnashuv",
+        description: "Ikki avtomobil to'qnashuvi. O'ng qator to'silgan, YPX va tez yordam joyida.",
         latitude: 41.3111,
         longitude: 69.2797,
         severity: 'high',
@@ -125,8 +125,8 @@ class ResilientDataStore {
       {
         id: 'feat-2',
         featureType: 'accident',
-        title: 'Minor fender-bender on Chilonzor Street',
-        description: 'Right lane slow down. Awaiting inspector.',
+        title: "Chilonzor ko'chasida to'qnashuv",
+        description: "Yengil to'qnashuv sodir bo'lgan. O'ng qator bo'ylab harakat sekinlashgan.",
         latitude: 41.2725,
         longitude: 69.2045,
         severity: 'medium',
@@ -137,8 +137,8 @@ class ResilientDataStore {
       {
         id: 'feat-3',
         featureType: 'traffic',
-        title: 'Heavy traffic on Bunyodkor Avenue',
-        description: 'Severe congestion northbound towards Friendship of Nations Palace.',
+        title: "Bunyodkor shoh ko'chasida kuchli tirbandlik",
+        description: "Xalqlar do'stligi maydoni tomon kuchli tirbandlik kuzatilmoqda.",
         latitude: 41.3032,
         longitude: 69.2435,
         severity: 'high',
@@ -149,8 +149,8 @@ class ResilientDataStore {
       {
         id: 'feat-4',
         featureType: 'traffic',
-        title: 'Slow flow on Mustaqillik Avenue',
-        description: 'Moderate evening rush hour delay (approx +12 min).',
+        title: "Mustaqillik shoh ko'chasida tirbandlik",
+        description: "Tig'iz vaqt kechikishi (taxminan +12 daqiqa).",
         latitude: 41.3195,
         longitude: 69.2885,
         severity: 'medium',
@@ -161,8 +161,8 @@ class ResilientDataStore {
       {
         id: 'feat-5',
         featureType: 'roadwork',
-        title: 'Underground utility pipe repair on Navoi Avenue',
-        description: 'Two center lanes closed for maintenance until 23:00.',
+        title: "Navoiy shoh ko'chasida yer osti ta'miri",
+        description: "Muhandislik quvurlari ta'miri sababli ikki qator qisman yopilgan.",
         latitude: 41.3241,
         longitude: 69.2558,
         severity: 'medium',
@@ -173,11 +173,96 @@ class ResilientDataStore {
       {
         id: 'feat-6',
         featureType: 'closure',
-        title: 'Temporary road closure on Buyuk Ipak Yoli',
-        description: 'Asphalt resurfacing. Detour signs in place via Mirzo Ulugbek Ave.',
+        title: "Buyuk Ipak Yo'lida vaqtincha ta'mir",
+        description: "Asfalt yotqizish ishlari sababli qisman to'silgan. Aylanma yo'l Mirzo Ulug'bek orqali.",
         latitude: 41.3289,
         longitude: 69.3350,
         severity: 'urgent',
+        source: 'Official',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      // Regional & Intercity Highway Features (A373 towards Chust/Namangan, M39 towards Samarkand, Chirchiq)
+      {
+        id: 'feat-7',
+        featureType: 'roadwork',
+        title: "Ohangaron trassasida asfalt yotqizish ishlari",
+        description: "A373 trassasida o'ng qator yopilgan. Harakat tezligi 50 km/soatgacha cheklangan.",
+        latitude: 40.9086,
+        longitude: 69.6384,
+        severity: 'medium',
+        source: 'Reported by people',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-8',
+        featureType: 'traffic',
+        title: "Angren aylanma trassasida tirbandlik",
+        description: "Yuk transportlari oqimi va aylanma yo'ldagi tirbandlik (+15 daqiqa kechikish).",
+        latitude: 41.0094,
+        longitude: 70.0753,
+        severity: 'medium',
+        source: 'Reported by people',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-9',
+        featureType: 'hazard',
+        title: "Qamchiq dovonida tuman va ta'mirlash ishlari",
+        description: "A373 Qamchiq dovoni qismida ko'rish masofasi cheklangan va xavfli burilishlarda ta'mir olib borilmoqda.",
+        latitude: 41.0928,
+        longitude: 70.5194,
+        severity: 'urgent',
+        source: 'Official',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-10',
+        featureType: 'roadwork',
+        title: "Chust shahriga kirish yo'lida ta'mirlash",
+        description: "Chust markaziy kirish ko'chasida yo'l qoplamasi yangilanmoqda. Haydovchilardan ehtiyotkorlik so'raladi.",
+        latitude: 41.0097,
+        longitude: 71.2289,
+        severity: 'medium',
+        source: 'Reported by people',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-11',
+        featureType: 'roadwork',
+        title: "M39 Chinoz ko'prigi yaqinida yo'l ta'miri",
+        description: "M39 magistralida ko'prik usti ta'miri sababli chap qator vaqtincha to'silgan.",
+        latitude: 40.9412,
+        longitude: 68.7510,
+        severity: 'medium',
+        source: 'Official',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-12',
+        featureType: 'traffic',
+        title: "Samarqand shahriga kirish trassasida tirbandlik",
+        description: "M39 Samarqand kirish qismida tig'iz soatdagi transport tirbandligi (+12 daqiqa).",
+        latitude: 39.6542,
+        longitude: 66.9597,
+        severity: 'medium',
+        source: 'Reported by people',
+        isActive: true,
+        verifiedAt: nowIso
+      },
+      {
+        id: 'feat-13',
+        featureType: 'roadwork',
+        title: "Chirchiq yo'nalishida yo'l kengaytirish",
+        description: "Chirchiq shahriga kirish ko'chasida qo'shimcha qator qurilishi davom etmoqda.",
+        latitude: 41.4688,
+        longitude: 69.5822,
+        severity: 'low',
         source: 'Official',
         isActive: true,
         verifiedAt: nowIso
@@ -386,6 +471,28 @@ class ResilientDataStore {
       updatedAt: now
     };
 
+    // Immediately publish as an active map feature so ALL users see it immediately on the map!
+    let featureType: MapFeature['featureType'] = 'hazard';
+    if (reportData.category === 'closure') featureType = 'closure';
+    else if (reportData.category === 'construction' || reportData.category === 'damage') featureType = 'roadwork';
+    else if (reportData.category === 'transit') featureType = 'traffic';
+    else if (reportData.category === 'hazard') featureType = 'hazard';
+
+    const mapFeature: MapFeature = {
+      id: `feat-rep-${id.replace('rep-', '')}`,
+      featureType,
+      title: reportData.title,
+      description: reportData.description || 'Reported by people on the road',
+      latitude: reportData.latitude,
+      longitude: reportData.longitude,
+      severity: reportData.severity || 'medium',
+      source: 'Reported by people',
+      isActive: true,
+      verifiedAt: now,
+      linkedReportId: id
+    };
+    this.mapFeatures.set(mapFeature.id, mapFeature);
+
     this.reports.set(id, report);
     return { report, duplicateOf };
   }
@@ -449,6 +556,95 @@ class ResilientDataStore {
     return true;
   }
 
+  public updateMapFeature(featureId: string, updates: Partial<MapFeature>): MapFeature | undefined {
+    const feat = this.mapFeatures.get(featureId);
+    if (!feat) return undefined;
+    const updated: MapFeature = {
+      ...feat,
+      ...updates,
+      id: feat.id,
+      verifiedAt: new Date().toISOString()
+    };
+    this.mapFeatures.set(featureId, updated);
+
+    // Synchronize with linked report if present
+    if (feat.linkedReportId) {
+      const rep = this.reports.get(feat.linkedReportId);
+      if (rep) {
+        if (updates.title) rep.title = updates.title;
+        if (updates.description) rep.description = updates.description;
+        if (updates.severity) rep.severity = updates.severity;
+        if (updates.latitude !== undefined) rep.latitude = updates.latitude;
+        if (updates.longitude !== undefined) rep.longitude = updates.longitude;
+        rep.updatedAt = new Date().toISOString();
+        this.reports.set(rep.id, rep);
+      }
+    }
+    return updated;
+  }
+
+  public deleteMapFeature(featureId: string): boolean {
+    const feat = this.mapFeatures.get(featureId);
+    if (!feat) return false;
+    feat.isActive = false;
+    this.mapFeatures.delete(featureId);
+
+    // Also mark linked report as resolved/rejected so it's removed
+    if (feat.linkedReportId) {
+      const rep = this.reports.get(feat.linkedReportId);
+      if (rep) {
+        rep.status = 'RESOLVED';
+        rep.statusNotes = 'Removed from map by road engineer / admin';
+        rep.updatedAt = new Date().toISOString();
+        this.reports.set(rep.id, rep);
+      }
+    }
+    return true;
+  }
+
+  public updateReport(reportId: string, updates: Partial<Report>): Report | undefined {
+    const rep = this.reports.get(reportId);
+    if (!rep) return undefined;
+    const updated: Report = {
+      ...rep,
+      ...updates,
+      id: rep.id,
+      updatedAt: new Date().toISOString()
+    };
+    this.reports.set(reportId, updated);
+
+    // Synchronize with linked MapFeature
+    const linkedFeat = Array.from(this.mapFeatures.values()).find(f => f.linkedReportId === reportId);
+    if (linkedFeat) {
+      if (updates.title) linkedFeat.title = updates.title;
+      if (updates.description) linkedFeat.description = updates.description;
+      if (updates.severity) linkedFeat.severity = updates.severity;
+      if (updates.latitude !== undefined) linkedFeat.latitude = updates.latitude;
+      if (updates.longitude !== undefined) linkedFeat.longitude = updates.longitude;
+      if (updates.status === 'REJECTED' || updates.status === 'RESOLVED') {
+        linkedFeat.isActive = false;
+        this.mapFeatures.delete(linkedFeat.id);
+      } else {
+        this.mapFeatures.set(linkedFeat.id, linkedFeat);
+      }
+    }
+    return updated;
+  }
+
+  public deleteReport(reportId: string): boolean {
+    const rep = this.reports.get(reportId);
+    if (!rep) return false;
+    this.reports.delete(reportId);
+
+    // Delete linked MapFeature
+    const linkedFeat = Array.from(this.mapFeatures.values()).find(f => f.linkedReportId === reportId);
+    if (linkedFeat) {
+      linkedFeat.isActive = false;
+      this.mapFeatures.delete(linkedFeat.id);
+    }
+    return true;
+  }
+
   // --- Proposed Changes & Approval Methods ---
   public createProposedChange(data: Omit<ProposedMapChange, 'id' | 'createdAt' | 'status'>): ProposedMapChange {
     const id = `prop-${uuidv4().slice(0, 8)}`;
@@ -491,8 +687,15 @@ class ResilientDataStore {
       linkedReportId: change.reportId
     });
 
-    // If linked to a report, mark report PUBLISHED
+    // If linked to a report, clean up temporary community feature and mark report PUBLISHED
     if (change.reportId) {
+      const existingCommunityFeat = Array.from(this.mapFeatures.values()).find(
+        f => f.linkedReportId === change.reportId && f.source === 'Reported by people'
+      );
+      if (existingCommunityFeat) {
+        existingCommunityFeat.isActive = false;
+        this.mapFeatures.delete(existingCommunityFeat.id);
+      }
       this.updateReportStatus(change.reportId, 'PUBLISHED', 'Approved and published to public map');
     }
 

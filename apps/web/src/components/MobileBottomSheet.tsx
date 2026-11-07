@@ -10,7 +10,8 @@ import {
   FileText, 
   HelpCircle, 
   Settings, 
-  Plus 
+  Plus,
+  Truck 
 } from 'lucide-react';
 
 export const MobileBottomSheet: React.FC = () => {
@@ -18,6 +19,9 @@ export const MobileBottomSheet: React.FC = () => {
     features, 
     weather, 
     airQuality, 
+    activeRoute,
+    userCoords,
+    setFocusedLocation,
     activeTab, 
     setActiveTab, 
     setIsReportingOpen, 
@@ -25,6 +29,14 @@ export const MobileBottomSheet: React.FC = () => {
   } = useApp();
 
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const activeWeather = activeRoute?.destinationWeather || weather;
+  const activeAqi = activeRoute?.destinationAirQuality || airQuality;
+  const displayedFeatures = activeRoute
+    ? (activeRoute.routeIncidents || [])
+    : features.filter(
+        f => Boolean(f.linkedReportId) || Math.hypot(f.latitude - userCoords.lat, f.longitude - userCoords.lon) <= 0.25
+      );
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex flex-col items-center">
@@ -34,8 +46,8 @@ export const MobileBottomSheet: React.FC = () => {
           href="#/ambulance"
           className="flex items-center gap-1.5 bg-red-600 text-white px-4 py-3 rounded-full shadow-float font-extrabold text-sm border border-red-700 active:scale-95 transition-all"
         >
-          <span>🚑</span>
-          <span>103 Tez Yordam</span>
+          <Truck className="w-4 h-4 text-white" />
+          <span>Favqulodda Xizmatlar (SOS)</span>
         </a>
 
         <button
@@ -61,12 +73,12 @@ export const MobileBottomSheet: React.FC = () => {
             <div className="flex items-center gap-2 text-left">
               <span className="w-2.5 h-2.5 rounded-full bg-accentOrange animate-ping"></span>
               <span className="text-xs font-bold text-textPrimary dark:text-darkText">
-                {features.length} {t('roads.summarySuffix')}
+                {displayedFeatures.length} {t('roads.summarySuffix')}
               </span>
             </div>
-            {weather && (
+            {activeWeather && (
               <span className="text-xs font-bold text-textSecondary dark:text-darkTextSec">
-                {weather.temperatureC > 0 ? '+' : ''}{weather.temperatureC}°C • {weather.conditionText}
+                {activeWeather.city}: {activeWeather.temperatureC > 0 ? '+' : ''}{activeWeather.temperatureC}°C • {activeWeather.conditionText}
               </span>
             )}
             {isExpanded ? (
@@ -81,28 +93,34 @@ export const MobileBottomSheet: React.FC = () => {
         {isExpanded && (
           <div className="px-5 py-3 max-h-[50vh] overflow-y-auto space-y-3">
             {/* Weather & AQI Mini Card */}
-            {weather && (
+            {activeWeather && (
               <div className="p-3.5 rounded-2xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700">
                 <div className="flex justify-between items-center text-xs font-bold text-textPrimary dark:text-darkText">
-                  <span>{weather.city}</span>
-                  <span className="text-statusSuccess">Air: {airQuality?.aqiLevel || 'Good'}</span>
+                  <span>{activeWeather.city}</span>
+                  <span className="text-statusSuccess">AQI: {activeAqi?.aqi || 28} ({activeAqi?.aqiLevel || 'Good'})</span>
                 </div>
                 <div className="text-xl font-extrabold text-textPrimary dark:text-darkText mt-1">
-                  {weather.temperatureC > 0 ? '+' : ''}{weather.temperatureC}°C
+                  {activeWeather.temperatureC > 0 ? '+' : ''}{activeWeather.temperatureC}°C
                 </div>
                 <p className="text-[11px] text-textSecondary dark:text-darkTextSec mt-1">
-                  {airQuality?.advice}
+                  {activeAqi?.advice}
                 </p>
               </div>
             )}
 
             {/* Road Incidents List */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-textSecondary uppercase">Road Obstacles</span>
-              {features.map((item) => (
+              <span className="text-xs font-bold text-textSecondary uppercase">
+                {activeRoute ? "Yo'nalishdagi muammolar" : t('roads.title')}
+              </span>
+              {displayedFeatures.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700 text-xs"
+                  onClick={() => {
+                    setFocusedLocation({ lat: item.latitude, lon: item.longitude });
+                    setIsExpanded(false);
+                  }}
+                  className="p-3 rounded-xl bg-innerSoftArea dark:bg-gray-800 border border-yolBorder dark:border-gray-700 text-xs cursor-pointer"
                 >
                   <div className="flex justify-between items-center font-bold text-textPrimary dark:text-darkText">
                     <span>{item.title}</span>

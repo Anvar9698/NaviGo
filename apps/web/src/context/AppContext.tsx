@@ -7,7 +7,10 @@ import {
   AirQualityData,
   MapFeature,
   RouteResult,
-  Report
+  Report,
+  GasStation,
+  GasStationUpdatePayload,
+  ApproachingEmergencyAlert
 } from '@yol/shared';
 
 export type AppTheme = 'light' | 'dark' | 'high-contrast';
@@ -74,6 +77,8 @@ interface AppContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   features: MapFeature[];
+  selectedFeature: MapFeature | null;
+  setSelectedFeature: (f: MapFeature | null) => void;
   userReports: Report[];
   weather: WeatherData | null;
   airQuality: AirQualityData | null;
@@ -86,6 +91,10 @@ interface AppContextType {
   setTravelMode: (m: TravelMode) => void;
   activeRoute: RouteResult | null;
   setActiveRoute: (route: RouteResult | null) => void;
+  originCoords: { lat: number; lon: number; name: string } | null;
+  setOriginCoords: (coords: { lat: number; lon: number; name: string } | null) => void;
+  destinationCoords: { lat: number; lon: number; name: string } | null;
+  setDestinationCoords: (coords: { lat: number; lon: number; name: string } | null) => void;
   isNavigating: boolean;
   setIsNavigating: (nav: boolean) => void;
   currentNavStep: number;
@@ -95,7 +104,31 @@ interface AppContextType {
   startNavigation: () => void;
   stopNavigation: () => void;
   speakInstruction: (text: string) => void;
-  requestRoute: (destLat: number, destLon: number, mode?: TravelMode, destName?: string) => Promise<void>;
+  requestRoute: (
+    destLat: number, 
+    destLon: number, 
+    mode?: TravelMode, 
+    destName?: string,
+    startLat?: number,
+    startLon?: number,
+    startName?: string
+  ) => Promise<void>;
+
+  // Gas Stations & Live Pressure/Queue Telemetry (Idea 1)
+  gasStations: (GasStation & { distanceKm?: number })[];
+  gasFilter: 'all' | 'metan' | 'propan' | 'petrol';
+  setGasFilter: (f: 'all' | 'metan' | 'propan' | 'petrol') => void;
+  isGasLayerVisible: boolean;
+  setIsGasLayerVisible: (v: boolean) => void;
+  selectedGasStation: (GasStation & { distanceKm?: number }) | null;
+  setSelectedGasStation: (s: (GasStation & { distanceKm?: number }) | null) => void;
+  fetchGasStations: () => Promise<void>;
+  reportGasStationUpdate: (stationId: string, payload: GasStationUpdatePayload) => Promise<void>;
+
+  // V2X Green Corridor Approaching Emergency Siren Alert (Idea 2)
+  approachingAlert: ApproachingEmergencyAlert | null;
+  setApproachingAlert: (a: ApproachingEmergencyAlert | null) => void;
+  triggerDemoV2XAlert: (serviceType?: '103' | '102' | '101' | '104' | '1050') => Promise<void>;
 
   refreshData: () => Promise<void>;
   fetchUserReports: () => Promise<void>;
@@ -144,6 +177,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const [features, setFeatures] = useState<MapFeature[]>([]);
+  const [selectedFeature, setSelectedFeature] = useState<MapFeature | null>(null);
   const [userReports, setUserReports] = useState<Report[]>([]);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
@@ -153,9 +187,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Routing & Navigation states
   const [travelMode, setTravelMode] = useState<TravelMode>('car');
   const [activeRoute, setActiveRoute] = useState<RouteResult | null>(null);
+  const [originCoords, setOriginCoords] = useState<{ lat: number; lon: number; name: string } | null>(null);
+  const [destinationCoords, setDestinationCoords] = useState<{ lat: number; lon: number; name: string } | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [currentNavStep, setCurrentNavStep] = useState(0);
   const [isVoiceMuted, setIsVoiceMuted] = useState(false);
+
+  // Gas Stations & Live Pressure/Queue Telemetry (Idea 1)
+  const [gasStations, setGasStations] = useState<(GasStation & { distanceKm?: number })[]>([]);
+  const [gasFilter, setGasFilter] = useState<'all' | 'metan' | 'propan' | 'petrol'>('all');
+  const [isGasLayerVisible, setIsGasLayerVisible] = useState(true);
+  const [selectedGasStation, setSelectedGasStation] = useState<(GasStation & { distanceKm?: number }) | null>(null);
+
+  // V2X Green Corridor Approaching Alert (Idea 2)
+  const [approachingAlert, setApproachingAlert] = useState<ApproachingEmergencyAlert | null>(null);
+  const lastSpokenAlertIdRef = React.useRef<string | null>(null);
 
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
@@ -288,17 +334,79 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   // Request Route with given mode
-  const requestRoute = async (destLat: number, destLon: number, mode = travelMode, destName?: string) => {
+  const requestRoute = async (
+    destLat: number, 
+    destLon: number, 
+    mode = travelMode, 
+    destName?: string,
+    startLat?: number,
+    startLon?: number,
+    startName?: string
+  ) => {
     try {
-      const url = `/api/v1/map/route?startLat=${userCoords.lat}&startLon=${userCoords.lon}&endLat=${destLat}&endLon=${destLon}&mode=${mode}&destinationName=${encodeURIComponent(destName || '')}`;
+      const sLat = startLat !== undefined ? startLat : (originCoords?.lat ?? userCoords.lat);
+      const sLon = startLon !== undefined ? startLon : (originCoords?.lon ?? userCoords.lon);
+      const defaultStartName = locale === 'ru' ? 'Мое местоположение' : locale === 'en' ? 'My location' : 'Mening joylashuvim';
+      const sName = startName || originCoords?.name || defaultStartName;
+
+      setDestinationCoords({ lat: destLat, lon: destLon, name: destName || 'Manzil' });
+      setOriginCoords({ lat: sLat, lon: sLon, name: sName });
+
+      const url = `/api/v1/map/route?startLat=${sLat}&startLon=${sLon}&endLat=${destLat}&endLon=${destLon}&mode=${mode}&destinationName=${encodeURIComponent(destName || '')}&originName=${encodeURIComponent(sName)}`;
       const res = await fetch(url);
       if (res.ok) {
         const routeData: RouteResult = await res.json();
+        routeData.originName = sName;
+        routeData.destinationName = destName || 'Manzil';
+        // Ensure route starts at origin coords and connects all the way to destination coords
+        if (routeData.coordinates && routeData.coordinates.length > 0) {
+          routeData.coordinates[0] = [sLon, sLat];
+          const lastPoint = routeData.coordinates[routeData.coordinates.length - 1];
+          const distToDest = Math.hypot(lastPoint[0] - destLon, lastPoint[1] - destLat);
+          if (distToDest > 0.005) {
+            routeData.coordinates.push([destLon, destLat]);
+          }
+        } else {
+          routeData.coordinates = [
+            [sLon, sLat],
+            [destLon, destLat]
+          ];
+        }
         setActiveRoute(routeData);
         setCurrentNavStep(0);
+      } else {
+        setActiveRoute({
+          originName: sName,
+          destinationName: destName || 'Manzil',
+          distanceMeters: 5000,
+          durationMinutes: 15,
+          mode,
+          coordinates: [
+            [sLon, sLat],
+            [destLon, destLat]
+          ],
+          steps: [{ instruction: 'Manzil tomon harakatlaning', distanceMeters: 5000, durationSeconds: 900, maneuverType: 'straight' }],
+          warnings: []
+        });
       }
     } catch (err) {
       console.warn('Error fetching route:', err);
+      const sLat = startLat !== undefined ? startLat : (originCoords?.lat ?? userCoords.lat);
+      const sLon = startLon !== undefined ? startLon : (originCoords?.lon ?? userCoords.lon);
+      const sName = startName || originCoords?.name || 'Mening joylashuvim';
+      setActiveRoute({
+        originName: sName,
+        destinationName: destName || 'Manzil',
+        distanceMeters: 5000,
+        durationMinutes: 15,
+        mode,
+        coordinates: [
+          [sLon, sLat],
+          [destLon, destLat]
+        ],
+        steps: [{ instruction: 'Manzil tomon harakatlaning', distanceMeters: 5000, durationSeconds: 900, maneuverType: 'straight' }],
+        warnings: []
+      });
     }
   };
 
@@ -319,6 +427,88 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       window.speechSynthesis.cancel();
     }
   };
+
+  const fetchGasStations = async () => {
+    try {
+      const url = `/api/v1/gas-stations?fuel=${gasFilter}&lat=${userCoords.lat}&lon=${userCoords.lon}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setGasStations(data.stations || []);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch gas stations:', e);
+    }
+  };
+
+  const reportGasStationUpdate = async (stationId: string, payload: GasStationUpdatePayload) => {
+    try {
+      const res = await fetch(`/api/v1/gas-stations/${stationId}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGasStations(prev => prev.map(s => s.id === stationId ? { ...s, ...data.station } : s));
+        if (selectedGasStation && selectedGasStation.id === stationId) {
+          setSelectedGasStation(prev => prev ? { ...prev, ...data.station } : null);
+        }
+      }
+    } catch (e) {
+      console.warn('Report gas station error:', e);
+    }
+  };
+
+  const triggerDemoV2XAlert = async (serviceType: '103' | '102' | '101' | '104' | '1050' = '103') => {
+    try {
+      const res = await fetch('/api/v1/ambulance/demo-v2x', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: userCoords.lat, lon: userCoords.lon, serviceType })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setApproachingAlert(data.alert);
+        speakInstruction(data.alert.messageUz);
+      }
+    } catch (e) {
+      console.warn('Demo V2X alert error:', e);
+    }
+  };
+
+  // Poll for approaching emergency vehicles & V2X Green Corridor (Idea 2)
+  useEffect(() => {
+    let isSubscribed = true;
+    const pollV2X = async () => {
+      try {
+        const res = await fetch(`/api/v1/ambulance/v2x-alert?lat=${userCoords.lat}&lon=${userCoords.lon}`);
+        if (res.ok && isSubscribed) {
+          const data = await res.json();
+          if (data.alert) {
+            setApproachingAlert(data.alert);
+            if (lastSpokenAlertIdRef.current !== data.alert.id) {
+              lastSpokenAlertIdRef.current = data.alert.id;
+              speakInstruction(data.alert.messageUz);
+            }
+          } else {
+            setApproachingAlert(null);
+          }
+        }
+      } catch {}
+    };
+
+    pollV2X();
+    const interval = setInterval(pollV2X, 2500);
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [userCoords.lat, userCoords.lon]);
+
+  useEffect(() => {
+    fetchGasStations();
+  }, [gasFilter, userCoords.lat, userCoords.lon]);
 
   const refreshData = async () => {
     try {
@@ -398,6 +588,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         markNotificationAsRead,
         markAllNotificationsAsRead,
         features,
+        selectedFeature,
+        setSelectedFeature,
         userReports,
         weather,
         airQuality,
@@ -410,6 +602,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setTravelMode,
         activeRoute,
         setActiveRoute,
+        originCoords,
+        setOriginCoords,
+        destinationCoords,
+        setDestinationCoords,
         isNavigating,
         setIsNavigating,
         currentNavStep,
@@ -420,6 +616,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         stopNavigation,
         speakInstruction,
         requestRoute,
+
+        // Gas Stations & Live Pressure/Queue Telemetry (Idea 1)
+        gasStations,
+        gasFilter,
+        setGasFilter,
+        isGasLayerVisible,
+        setIsGasLayerVisible,
+        selectedGasStation,
+        setSelectedGasStation,
+        fetchGasStations,
+        reportGasStationUpdate,
+
+        // V2X Green Corridor Approaching Alert (Idea 2)
+        approachingAlert,
+        setApproachingAlert,
+        triggerDemoV2XAlert,
 
         refreshData,
         fetchUserReports

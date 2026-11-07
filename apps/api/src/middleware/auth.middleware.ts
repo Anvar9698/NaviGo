@@ -20,8 +20,26 @@ export function authMiddleware(
 
   const token = authHeader.split(' ')[1];
   try {
-    const payload = jwt.verify(token, CONFIG.jwtSecret) as { userId: string };
-    const user = dbStore.getUserById(payload.userId);
+    const payload = jwt.verify(token, CONFIG.jwtSecret) as { 
+      userId: string; 
+      role?: UserRole; 
+      email?: string; 
+      name?: string 
+    };
+    let user = dbStore.getUserById(payload.userId);
+    if (!user && payload.userId) {
+      // Re-hydrate session from cryptographically valid JWT signature across restarts
+      user = {
+        id: payload.userId,
+        email: payload.email || 'citizen@yol.uz',
+        name: payload.name || 'Fuqaro (Citizen)',
+        role: payload.role || 'USER',
+        twoFactorEnabled: false,
+        createdAt: new Date().toISOString(),
+        passwordHash: ''
+      };
+      (dbStore as any).users.set(user.id, user);
+    }
     if (user) {
       req.user = user;
     }

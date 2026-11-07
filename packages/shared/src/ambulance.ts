@@ -13,12 +13,17 @@ export interface AmbulanceStaffBinding {
   ambulanceId?: string;
 }
 
+import { MapFeature } from './types';
+
+export type EmergencyServiceType = '103' | '102' | '101' | '104' | '1050';
+
 export type HospitalType = 'state' | 'private';
 
 export interface Hospital {
   id: string;
   name: string;
   type: HospitalType;
+  serviceType?: EmergencyServiceType;
   lat: number;
   lon: number;
   isDemo: boolean;
@@ -30,6 +35,7 @@ export type AmbulanceStatus = 'free' | 'assigned' | 'enroute' | 'onscene' | 'bus
 export interface AmbulanceUnit {
   id: string;
   hospitalId: string;
+  serviceType?: EmergencyServiceType;
   plateNumber: string;
   lat: number;
   lon: number;
@@ -53,6 +59,7 @@ export type EmergencyRequestStatus =
 
 export interface EmergencyRequest {
   id: string;
+  serviceType?: EmergencyServiceType;
   citizenId: string;
   citizenName: string;
   citizenPhone?: string;
@@ -61,6 +68,8 @@ export interface EmergencyRequest {
   description: string;
   severity: EmergencySeverity;
   status: EmergencyRequestStatus;
+  mediaUrl?: string; // For 1050 photo/video upload
+  mediaType?: 'image' | 'video';
   targetHospitalId?: string;
   triedHospitalIds: string[];
   assignedAmbulanceId?: string;
@@ -68,6 +77,8 @@ export interface EmergencyRequest {
   routeGeometry?: [number, number][];
   routeSteps?: AmbulanceRouteStep[];
   hazardWarnings?: string[];
+  routeIncidents?: MapFeature[];
+  trafficDelayMinutes?: number;
   etaMinutes?: number;
   distanceMeters?: number;
   timeoutAt?: string;
@@ -86,6 +97,7 @@ export interface AmbulanceStats {
 }
 
 export interface AmbulanceStatePayload {
+  serviceType?: EmergencyServiceType;
   role: 'CITIZEN' | 'DISPATCHER' | 'DRIVER' | 'ADMIN' | 'ANALYST' | 'ANONYMOUS';
   binding?: AmbulanceStaffBinding;
   hospitals: Hospital[];

@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle, X, Download } from 'lucide-react';
 
 export const AnalystWorkspace: React.FC = () => {
-  const { activeTab, setActiveTab, token } = useApp();
+  const { activeTab, setActiveTab, token, user } = useApp();
   const [data, setData] = useState<any>(null);
   const [heatmaps, setHeatmaps] = useState<any[]>([]);
 
@@ -34,7 +34,7 @@ export const AnalystWorkspace: React.FC = () => {
     }
   }, [activeTab, token]);
 
-  if (activeTab !== 'analyst') return null;
+  if (activeTab !== 'analyst' || !user || (user.role !== 'ANALYST' && user.role !== 'ADMIN')) return null;
 
   const handleExportCSV = () => {
     if (!data) return;

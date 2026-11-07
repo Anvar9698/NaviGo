@@ -11,12 +11,13 @@ import { adminRouter } from './routes/admin.routes';
 import { analyticsRouter } from './routes/analytics.routes';
 import { supportRouter } from './routes/support.routes';
 import { ambulanceRouter } from './routes/ambulance.routes';
+import { gasStationRouter } from './routes/gasStation.routes';
 
 const app = express();
 
 // Security and CORS
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({ limit: '25mb' }));
 
 // Custom Security Headers (Part 9 Threat Model)
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -48,9 +49,9 @@ app.get('/api/v1/openapi.json', (req: Request, res: Response) => {
   res.json({
     openapi: '3.1.0',
     info: {
-      title: "Yo'l Ma'lumoti API",
+      title: "NaviGo API",
       version: '1.0.0',
-      description: 'API for accessible road conditions, weather, air quality, community reporting, and municipal approval workflows.'
+      description: 'API for accessible road conditions, navigation, weather, air quality, community reporting, and municipal emergency dispatch workflows.'
     },
     paths: {
       '/auth/login': { post: { summary: 'Authenticate user with email and password' } },
@@ -88,6 +89,7 @@ app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/support', supportRouter);
 app.use('/api/v1/ambulance', ambulanceRouter);
+app.use('/api/v1/gas-stations', gasStationRouter);
 
 // Global Error Handler (Hides internal stack traces in production)
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
@@ -100,7 +102,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(CONFIG.port, () => {
+  app.listen(CONFIG.port, '0.0.0.0', () => {
     console.log(`[Yol Ma'lumoti API] Running on http://localhost:${CONFIG.port}`);
   });
 }

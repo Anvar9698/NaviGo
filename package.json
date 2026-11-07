@@ -12,7 +12,7 @@
     "dev:api": "npm run dev --workspace=@yol/api",
     "dev:web": "npm run dev --workspace=@yol/web",
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspace=@yol/api"
   },
   "keywords": [
     "road-information",

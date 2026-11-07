@@ -10,12 +10,12 @@ export const SupportChatModal: React.FC = () => {
       id: 'init-1',
       conversationId: 'user-conv',
       senderType: 'AI_ASSISTANT',
-      senderName: 'Yol AI Assistant',
+      senderName: 'NaviGo AI',
       text: locale === 'uz' 
-        ? "Assalomu alaykum! Men Yo'l Ma'lumoti sun'iy intellekt yordamchisiman. Sizga yo'l holati, ob-havo yoki ilovadan foydalanish bo'yicha qanday yordam bera olaman?"
+        ? "Assalomu alaykum! Men NaviGo sun'iy intellekt yordamchisiman. Sizga yo'l holati, navigatsiya, ob-havo yoki favqulodda xizmatlar bo'yicha qanday yordam bera olaman?"
         : locale === 'ru'
-        ? "Здравствуйте! Я ИИ-помощник сервиса «Йўл Маълумоти». Чем могу помочь вам по дорожной ситуации или работе приложения?"
-        : "Hello! I am the Yol Ma'lumoti AI support assistant. How can I assist you with road conditions, weather, or navigation today?",
+        ? "Здравствуйте! Я ИИ-помощник сервиса NaviGo. Чем могу помочь вам по дорожной ситуации, навигации или экстренным службам?"
+        : "Hello! I am the NaviGo AI assistant. How can I assist you with road navigation, traffic, weather, or emergency services today?",
       timestamp: new Date().toISOString()
     }
   ]);

@@ -2,14 +2,14 @@ export type SupportedLocale = 'uz' | 'ru' | 'en';
 
 export const TRANSLATIONS = {
   uz: {
-    brand: "Yo'l Ma'lumoti",
-    tagline: "Xavfsiz va tushunarli yo'l axboroti",
+    brand: "NaviGo",
+    tagline: "Aqlli navigatsiya va favqulodda xizmatlar ekotizimi",
     nav: {
       map: "Xarita",
-      myReports: "Mening xabarlarim",
+      myReports: "Xabarlarim",
       help: "Yordam",
       settings: "Sozlamalar",
-      admin: "Boshqaruv paneli",
+      admin: "Boshqaruv",
       analyst: "Tahlil",
       editor: "Tahririyat"
     },
@@ -53,6 +53,13 @@ export const TRANSLATIONS = {
     },
     navigation: {
       routeTitle: "Marshrut tuzish",
+      from: "Qayerdan",
+      to: "Qayerga",
+      swap: "Almashtirish",
+      myLocation: "Mening joylashuvim",
+      planRoute: "Marshrut tuzish (A dan B gacha)",
+      originPlaceholder: "Boshlang'ich joy (shahar, manzil)...",
+      destPlaceholder: "Boradigan manzilni tanlang...",
       modes: {
         car: "Avtomobil",
         transit: "Avtobus",
@@ -143,7 +150,7 @@ export const TRANSLATIONS = {
       signInOrRegister: "Kirish yoki Ro'yxatdan o'tish",
       submitButton: "Xabarni yuborish",
       successTitle: "Rahmat! Xabaringiz qabul qilindi.",
-      successDesc: "Mutaxassislarimiz tez orada xabaringizni tekshirib, xaritaga kiritadi.",
+      successDesc: "Xabaringiz barcha foydalanuvchilar uchun xaritada darhol aks ettirildi! Yo'l muhandisi va admin nazorat qiladi.",
       trackStatus: "Holatni kuzatish"
     },
     myReports: {
@@ -194,7 +201,7 @@ export const TRANSLATIONS = {
       reduceMotion: "Harakatlarni kamaytirish",
       reduceMotionDesc: "Animatsiyalar va sahifa siljishlarini o'chiradi",
       privacyTitle: "Joylashuv va maxfiylik nazorati",
-      privacyDesc: "Yo'l Ma'lumoti faqat dastur ochiq bo'lgandagina joylashuvdan foydalanadi. Biz sizning harakatlanish tarixingizni saqlamaymiz.",
+      privacyDesc: "NaviGo faqat dastur ochiq bo'lgandagina joylashuvdan foydalanadi. Biz sizning harakatlanish tarixingizni saqlamaymiz.",
       exportData: "Ma'lumotlarimni yuklab olish",
       deleteAccount: "Hisobimni o'chirish",
       voiceSpeed: "Ovoz tezligi"
@@ -221,10 +228,112 @@ export const TRANSLATIONS = {
       save: "Saqlash",
       cancel: "Bekor qilish"
     },
+    auth: {
+      accountProfile: "Foydalanuvchi profili",
+      citizenRegistration: "Fuqaro ro'yxatdan o'tishi",
+      signIn: "Tizimga kirish",
+      signInSubtitle: "Rolga asoslangan xavfsiz tizim (RBAC)",
+      fullName: "Ism va Familiya",
+      fullNamePlaceholder: "Masalan: Sherzod Aliyev",
+      emailAddress: "Email manzil",
+      password: "Parol (kamida 8 ta belgi)",
+      completing: "Tekshirilmoqda...",
+      completeRegistration: "Ro'yxatdan o'tish va Kirish",
+      alreadyAccount: "Hisobingiz bormi? Kirish",
+      needAccount: "Hisobingiz yo'qmi? Fuqaro sifatida ro'yxatdan o'tish",
+      signOut: "Hisobdan chiqish",
+      nameLabel: "Ism:",
+      emailLabel: "Email:",
+      roleLabel: "Rol:",
+      twoFaProtection: "2FA himoyasi:",
+      enabled: "Faol",
+      quickAccess: "Tezkor demo kirish (Lavozimni almashtirish):",
+      roles: {
+        admin: "Administrator",
+        editor: "Yo'l muharriri",
+        analyst: "Ma'lumotlar tahlilchisi",
+        citizen: "Fuqaro",
+        dispatcher: "Dispetcher",
+        driver: "Ekipaj haydovchisi"
+      }
+    },
+    emergency: {
+      services: {
+        '103': "103 Tez Tibbiy Yordam",
+        '102': "102 Ichki Ishlar",
+        '101': "101 Yong'in Xavfsizligi",
+        '104': "104 Favqulodda Gaz Xizmati",
+        '1050': "1050 FVV Qutqaruv"
+      },
+      servicesShort: {
+        '103': "103 Tez Yordam",
+        '102': "102 IIB Patrul",
+        '101': "101 Yong'in",
+        '104': "104 Gaz Xizmati",
+        '1050': "1050 Qutqaruv"
+      },
+      steps: {
+        s1: "1. Chaqiruv",
+        s2: "2. Dispetcher",
+        s3: "3. Yo'lda",
+        s4: "4. Manzilda"
+      },
+      status: {
+        pending: "Dispetcher ko'rmoqda",
+        assigned: "Ekipaj tayyor",
+        enroute: "Ekipaj yo'lda!",
+        onscene: "Manzilga yetib keldi!",
+        unassigned: "Markazga ulaning"
+      },
+      panel: {
+        citizen: "Chaqiruv Paneli",
+        dispatcher: "Dispetcherlik Markazi",
+        driver: "Ekipaj Navigatsiyasi",
+        analyst: "Tahlil va Statistika",
+        admin: "Tizim Administratori"
+      },
+      actions: {
+        newCall: "+ Yangi chaqiruv",
+        cancelCall: "Chaqiruvni bekor qilish",
+        cancelling: "Bekor qilinmoqda...",
+        completeCall: "Chaqiruvni yakunlash",
+        callService: "chaqirish",
+        callServiceSos: "CHAQIRISH (SOS)",
+        go: "YO'LGA CHIQISH (GO)",
+        onScene: "Manzilga yetib keldik (On Scene)",
+        completeTrip: "Chaqiruvni yakunlash (Baza)"
+      },
+      labels: {
+        caller: "Chaqiruvchi:",
+        phone: "Tel:",
+        severity: "Xavf darajasi:",
+        sev1: "1 - O'ta xavfli",
+        sev2: "2 - Shoshilinch",
+        sev3: "3 - O'rtacha",
+        details102: "Hodisa tafsiloti:",
+        details104: "Gaz avariyasi tafsiloti:",
+        details1050: "Falokat / Xavf turi:",
+        details103: "Bemor holati:",
+        phoneInput: "Bog'lanish uchun telefon raqami:",
+        coordsGps: "Koordinata (GPS)",
+        gpsActive: "GPS faol",
+        uploadEvidence: "Hodisa joyi rasmi yoki videosini yuklash (ixtiyoriy):",
+        selectMedia: "Foto yoki Video tanlang",
+        selectMediaDesc: "Dispetcher vaziyatni to'liq baholashi uchun",
+        deleteMedia: "O'chirish",
+        timeSaved: "Tejalgan o'rtacha vaqt:",
+        minutes: "daqiqa",
+        instantSignal: "Tezkor signal (Tavsif va xavf darajasi talab qilinmaydi)",
+        fireNotice: "Yong'in holatida har bir soniya muhim. Tugmani bosishingiz bilan eng yaqin o't o'chirish qismiga GPS koordinatangiz uzatiladi.",
+        activeAccount: "Faol Hisob (Fuqaro)",
+        anonymousCall: "Anonim rejimda chaqiruv berilmoqda",
+        canConnectAccount: "(Kirish orqali hisobni ulashingiz mumkin)"
+      }
+    },
     ambulance: {
       title: "Tez yordam 103",
       tagline: "Shoshilinch tibbiy yordam dispetcherlik tizimi",
-      backToMain: "Yo'l Ma'lumotiga qaytish",
+      backToMain: "NaviGo bosh sahifasiga qaytish",
       call103Now: "103 ga qo'ng'iroq qilish",
       pilotNotice: "Eslatma: Ushbu raqamli tizim sinov tariqasida ishlamoqda va telefon orqali 103 ga qo'ng'iroq qilish o'rnini to'liq bosmaydi. Hayot uchun xavf bo'lsa, zudlik bilan 103 ga qo'ng'iroq qiling!",
       citizen: {
@@ -277,14 +386,14 @@ export const TRANSLATIONS = {
   },
 
   ru: {
-    brand: "Йўл Маълумоти",
-    tagline: "Безопасная и понятная дорожная информация",
+    brand: "NaviGo",
+    tagline: "Умная дорожная навигация и экстренные службы",
     nav: {
       map: "Карта",
-      myReports: "Мои сообщения",
+      myReports: "Сообщения",
       help: "Помощь",
       settings: "Настройки",
-      admin: "Панель управления",
+      admin: "Управление",
       analyst: "Аналитика",
       editor: "Редакция"
     },
@@ -328,6 +437,13 @@ export const TRANSLATIONS = {
     },
     navigation: {
       routeTitle: "Маршрут",
+      from: "Откуда",
+      to: "Куда",
+      swap: "Поменять местами",
+      myLocation: "Моё местоположение",
+      planRoute: "Построить маршрут (из А в Б)",
+      originPlaceholder: "Начальная точка (город, адрес)...",
+      destPlaceholder: "Куда поедем...",
       modes: {
         car: "Авто",
         transit: "Автобус",
@@ -418,7 +534,7 @@ export const TRANSLATIONS = {
       signInOrRegister: "Войти или Зарегистрироваться",
       submitButton: "Отправить сообщение",
       successTitle: "Спасибо! Сообщение принято.",
-      successDesc: "Наши редакторы проверят его и обновят карту.",
+      successDesc: "Сообщение принято и сразу отображается на карте для всех пользователей! Дорожный инженер и администратор проверят данные.",
       trackStatus: "Отследить статус"
     },
     myReports: {
@@ -496,10 +612,112 @@ export const TRANSLATIONS = {
       save: "Сохранить",
       cancel: "Отмена"
     },
+    auth: {
+      accountProfile: "Профиль аккаунта",
+      citizenRegistration: "Регистрация гражданина",
+      signIn: "Вход в систему",
+      signInSubtitle: "Безопасный доступ с ролевым контролем (RBAC)",
+      fullName: "Имя и Фамилия",
+      fullNamePlaceholder: "Например: Шерзод Алиев",
+      emailAddress: "Электронная почта",
+      password: "Пароль (мин. 8 символов)",
+      completing: "Проверка...",
+      completeRegistration: "Зарегистрироваться и войти",
+      alreadyAccount: "Уже есть аккаунт? Войти",
+      needAccount: "Нет аккаунта? Зарегистрироваться",
+      signOut: "Выйти из системы",
+      nameLabel: "Имя:",
+      emailLabel: "Email:",
+      roleLabel: "Роль:",
+      twoFaProtection: "Защита 2FA:",
+      enabled: "Включена",
+      quickAccess: "Быстрый демо-вход (Смена роли):",
+      roles: {
+        admin: "Администратор",
+        editor: "Редактор дорог",
+        analyst: "Аналитик данных",
+        citizen: "Гражданин",
+        dispatcher: "Диспетчер",
+        driver: "Водитель экипажа"
+      }
+    },
+    emergency: {
+      services: {
+        '103': "103 Скорая Помощь",
+        '102': "102 Милиция / Полиция",
+        '101': "101 Пожарная Служба",
+        '104': "104 Аварийная Газовая Служба",
+        '1050': "1050 Служба Спасения МЧС"
+      },
+      servicesShort: {
+        '103': "103 Скорая",
+        '102': "102 Милиция",
+        '101': "101 Пожарные",
+        '104': "104 Горгаз",
+        '1050': "1050 Спасатели"
+      },
+      steps: {
+        s1: "1. Вызов",
+        s2: "2. Диспетчер",
+        s3: "3. В пути",
+        s4: "4. На месте"
+      },
+      status: {
+        pending: "Диспетчер рассматривает",
+        assigned: "Экипаж назначен",
+        enroute: "Экипаж в пути!",
+        onscene: "Прибыли на место!",
+        unassigned: "Свяжитесь с центром"
+      },
+      panel: {
+        citizen: "Панель вызова",
+        dispatcher: "Диспетчерский центр",
+        driver: "Навигация экипажа",
+        analyst: "Аналитика и статистика",
+        admin: "Администратор системы"
+      },
+      actions: {
+        newCall: "+ Новый вызов",
+        cancelCall: "Отменить вызов",
+        cancelling: "Отменяется...",
+        completeCall: "Завершить вызов",
+        callService: "вызвать",
+        callServiceSos: "ВЫЗВАТЬ (SOS)",
+        go: "ПОЕХАЛИ (GO)",
+        onScene: "Прибыли на место (On Scene)",
+        completeTrip: "Завершить вызов (База)"
+      },
+      labels: {
+        caller: "Заявитель:",
+        phone: "Тел:",
+        severity: "Степень тяжести:",
+        sev1: "1 — Критическое / Опасное",
+        sev2: "2 — Срочное",
+        sev3: "3 — Среднее",
+        details102: "Подробности происшествия:",
+        details104: "Детали утечки / газовой аварии:",
+        details1050: "Характер опасности:",
+        details103: "Состояние пациента:",
+        phoneInput: "Контактный номер телефона:",
+        coordsGps: "Координаты (GPS)",
+        gpsActive: "GPS активен",
+        uploadEvidence: "Прикрепить фото или видео происшествия (по желанию):",
+        selectMedia: "Выберите Фото или Видео",
+        selectMediaDesc: "Для полной оценки обстановки диспетчером",
+        deleteMedia: "Удалить",
+        timeSaved: "Среднее сэкономленное время:",
+        minutes: "мин.",
+        instantSignal: "Экстренный сигнал (Описание не требуется)",
+        fireNotice: "При пожаре важна каждая секунда. Нажатием кнопки ваши координаты передаются в ближайшую пожарную часть.",
+        activeAccount: "Активный аккаунт (Гражданин)",
+        anonymousCall: "Вызов отправляется в анонимном режиме",
+        canConnectAccount: "(Войдите, чтобы связать с вашим профилем)"
+      }
+    },
     ambulance: {
       title: "Скорая помощь 103",
       tagline: "Диспетчерская служба экстренной медицинской помощи",
-      backToMain: "Вернуться в Yo'l Ma'lumoti",
+      backToMain: "Вернуться в NaviGo",
       call103Now: "Позвонить 103 сейчас",
       pilotNotice: "Внимание: Эта цифровая система работает в пилотном режиме и не заменяет вызов по телефону 103. При угрозе жизни немедленно звоните по номеру 103!",
       citizen: {
@@ -552,14 +770,14 @@ export const TRANSLATIONS = {
   },
 
   en: {
-    brand: "Yol Ma'lumoti",
-    tagline: "Clear and safe road information",
+    brand: "NaviGo",
+    tagline: "Smart Road Navigation & Emergency Response",
     nav: {
       map: "Map",
-      myReports: "My reports",
+      myReports: "Reports",
       help: "Help",
       settings: "Settings",
-      admin: "Admin console",
+      admin: "Admin",
       analyst: "Analytics",
       editor: "Editor"
     },
@@ -603,6 +821,13 @@ export const TRANSLATIONS = {
     },
     navigation: {
       routeTitle: "Route Directions",
+      from: "From",
+      to: "To",
+      swap: "Swap",
+      myLocation: "My location",
+      planRoute: "Plan route (from A to B)",
+      originPlaceholder: "Starting point (city, address)...",
+      destPlaceholder: "Where to go...",
       modes: {
         car: "Car",
         transit: "Transit",
@@ -693,7 +918,7 @@ export const TRANSLATIONS = {
       signInOrRegister: "Sign In or Register",
       submitButton: "Send report",
       successTitle: "Thank you! We will check your report.",
-      successDesc: "Our editorial team will review and publish the update shortly.",
+      successDesc: "Your report is now immediately active and visible on the map for all users! Road engineers and administrators have oversight.",
       trackStatus: "Track report status"
     },
     myReports: {
@@ -744,7 +969,7 @@ export const TRANSLATIONS = {
       reduceMotion: "Reduce motion",
       reduceMotionDesc: "Disables transitions and camera panning animations",
       privacyTitle: "Location & Privacy Control",
-      privacyDesc: "Yo'l Ma'lumoti operates in foreground-only mode. We never track your location in the background or store your browsing path.",
+      privacyDesc: "NaviGo operates in foreground-only mode. We never track your location in the background or store your browsing path.",
       exportData: "Export My Data",
       deleteAccount: "Delete My Account",
       voiceSpeed: "Voice guidance speed"
@@ -771,10 +996,112 @@ export const TRANSLATIONS = {
       save: "Save",
       cancel: "Cancel"
     },
+    auth: {
+      accountProfile: "Account Profile",
+      citizenRegistration: "Citizen Registration",
+      signIn: "Sign In",
+      signInSubtitle: "Secure access with role-based access control (RBAC)",
+      fullName: "Full Name",
+      fullNamePlaceholder: "e.g. Sherzod Aliyev",
+      emailAddress: "Email Address",
+      password: "Password (min. 8 characters)",
+      completing: "Verifying...",
+      completeRegistration: "Complete Registration",
+      alreadyAccount: "Already have an account? Sign In",
+      needAccount: "Need an account? Register as Citizen",
+      signOut: "Sign Out",
+      nameLabel: "Name:",
+      emailLabel: "Email:",
+      roleLabel: "Role:",
+      twoFaProtection: "2FA Protection:",
+      enabled: "Enabled",
+      quickAccess: "Quick Demo Access (Switch Roles):",
+      roles: {
+        admin: "Administrator",
+        editor: "Road Editor",
+        analyst: "Data Analyst",
+        citizen: "Citizen User",
+        dispatcher: "Dispatcher",
+        driver: "Crew Driver"
+      }
+    },
+    emergency: {
+      services: {
+        '103': "103 Emergency Medical Service",
+        '102': "102 Police Patrol",
+        '101': "101 Fire & Rescue",
+        '104': "104 Emergency Gas Service",
+        '1050': "1050 MES Emergency Rescue"
+      },
+      servicesShort: {
+        '103': "103 Ambulance",
+        '102': "102 Police",
+        '101': "101 Fire",
+        '104': "104 Gas Service",
+        '1050': "1050 Rescue"
+      },
+      steps: {
+        s1: "1. Call",
+        s2: "2. Dispatcher",
+        s3: "3. En Route",
+        s4: "4. On Scene"
+      },
+      status: {
+        pending: "Pending Dispatch",
+        assigned: "Unit Assigned",
+        enroute: "Unit En Route!",
+        onscene: "Arrived On Scene!",
+        unassigned: "Contact Center"
+      },
+      panel: {
+        citizen: "Call Panel",
+        dispatcher: "Dispatch Center",
+        driver: "Crew Navigation",
+        analyst: "Analytics & Stats",
+        admin: "System Administrator"
+      },
+      actions: {
+        newCall: "+ New Call",
+        cancelCall: "Cancel Call",
+        cancelling: "Cancelling...",
+        completeCall: "Complete Call",
+        callService: "Call",
+        callServiceSos: "EMERGENCY CALL (SOS)",
+        go: "GO (Start Transit)",
+        onScene: "Arrived On Scene",
+        completeTrip: "Complete Call (Return to Base)"
+      },
+      labels: {
+        caller: "Caller:",
+        phone: "Phone:",
+        severity: "Severity Level:",
+        sev1: "1 — Critical / Life-threatening",
+        sev2: "2 — Urgent",
+        sev3: "3 — Moderate",
+        details102: "Incident Details:",
+        details104: "Gas Leak / Emergency Details:",
+        details1050: "Hazard Details:",
+        details103: "Patient Condition:",
+        phoneInput: "Contact Phone Number:",
+        coordsGps: "GPS Coordinates",
+        gpsActive: "GPS Active",
+        uploadEvidence: "Upload Photo or Video Evidence (optional):",
+        selectMedia: "Select Photo or Video",
+        selectMediaDesc: "For full situation assessment by dispatcher",
+        deleteMedia: "Remove",
+        timeSaved: "Average Time Saved:",
+        minutes: "min",
+        instantSignal: "Instant Alarm (No description required)",
+        fireNotice: "Every second counts in a fire. Your GPS location is dispatched to the nearest station immediately.",
+        activeAccount: "Active Account (Citizen)",
+        anonymousCall: "Submitting in anonymous mode",
+        canConnectAccount: "(Sign in to connect your profile)"
+      }
+    },
     ambulance: {
       title: "Ambulance 103",
       tagline: "Emergency Medical Dispatch Platform",
-      backToMain: "Back to Yo'l Ma'lumoti",
+      backToMain: "Back to NaviGo",
       call103Now: "Call 103 Now",
       pilotNotice: "Notice: This digital pilot is experimental and does not replace calling 103 by phone. If life or health is in danger, dial 103 immediately!",
       citizen: {

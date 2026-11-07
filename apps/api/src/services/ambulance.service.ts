@@ -8,7 +8,9 @@ import {
   AmbulanceStatePayload,
   AmbulanceRouteStep,
   RouteStep,
-  User
+  User,
+  EmergencyServiceType,
+  MapFeature
 } from '@yol/shared';
 import { ambulanceStore } from '../db/ambulance.store';
 import { dbStore, calculateHaversineDistanceKm } from '../db/store';
@@ -65,37 +67,144 @@ export function calculateStepPositions(
   });
 }
 
-// Checks if any active road hazards (closures, roadwork, accidents) lie within 50m of route
-export function checkRouteHazards(coordinates: [number, number][]): string[] {
-  if (!coordinates || coordinates.length === 0) return [];
+// Smoothly interpolates coordinates so emergency routes have plenty of waypoints for steady real-time driving
+export function interpolateRouteCoordinates(coords: [number, number][], targetPoints = 42): [number, number][] {
+  if (!coords || coords.length === 0) return coords;
+  if (coords.length >= targetPoints || coords.length < 2) return coords;
+
+  const result: [number, number][] = [];
+  const segments = coords.length - 1;
+  const extraPointsNeeded = targetPoints - coords.length;
+  const pointsPerSegment = Math.ceil(extraPointsNeeded / segments);
+
+  for (let i = 0; i < segments; i++) {
+    const p1 = coords[i];
+    const p2 = coords[i + 1];
+    result.push([Number(p1[0].toFixed(6)), Number(p1[1].toFixed(6))]);
+
+    for (let step = 1; step <= pointsPerSegment; step++) {
+      if (result.length >= targetPoints - (segments - i)) break;
+      const t = step / (pointsPerSegment + 1);
+      const lon = p1[0] + (p2[0] - p1[0]) * t;
+      const lat = p1[1] + (p2[1] - p1[1]) * t;
+      result.push([Number(lon.toFixed(6)), Number(lat.toFixed(6))]);
+    }
+  }
+  const last = coords[coords.length - 1];
+  result.push([Number(last[0].toFixed(6)), Number(last[1].toFixed(6))]);
+  return result;
+}
+
+function distancePointToSegmentKm(
+  pLat: number,
+  pLon: number,
+  aLat: number,
+  aLon: number,
+  bLat: number,
+  bLon: number
+): number {
+  const cosLat = Math.cos(((aLat + bLat) / 2) * (Math.PI / 180));
+  const px = (pLon - aLon) * cosLat * 111.32;
+  const py = (pLat - aLat) * 111.32;
+  const bx = (bLon - aLon) * cosLat * 111.32;
+  const by = (bLat - aLat) * 111.32;
+
+  const segLenSq = bx * bx + by * by;
+  if (segLenSq === 0) {
+    return Math.sqrt(px * px + py * py);
+  }
+  const t = Math.max(0, Math.min(1, (px * bx + py * by) / segLenSq));
+  const projX = t * bx;
+  const projY = t * by;
+  return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
+}
+
+export function analyzeEmergencyRouteCorridor(coordinates: [number, number][]): {
+  routeIncidents: MapFeature[];
+  hazardWarnings: string[];
+  trafficDelayMinutes: number;
+} {
+  if (!coordinates || coordinates.length === 0) {
+    return { routeIncidents: [], hazardWarnings: [], trafficDelayMinutes: 5 };
+  }
+
   const activeFeatures = dbStore.getActiveMapFeatures();
-  const warnings: string[] = [];
+  const scored: { feature: MapFeature; minDistKm: number }[] = [];
 
   for (const feature of activeFeatures) {
-    // Only check road closures, construction, or high severity hazards
-    if (!['closure', 'roadwork', 'hazard'].includes(feature.featureType)) continue;
-
-    // Check distance against sampled route coordinates (every 5th point to stay fast)
-    let minDistanceKm = Infinity;
-    for (let i = 0; i < coordinates.length; i += 3) {
-      const dist = calculateHaversineDistanceKm(
-        feature.latitude,
-        feature.longitude,
-        coordinates[i][1],
-        coordinates[i][0]
-      );
-      if (dist < minDistanceKm) {
-        minDistanceKm = dist;
-      }
-      if (minDistanceKm <= 0.05) break; // within 50m
+    if (!['traffic', 'roadwork', 'accident', 'closure', 'hazard'].includes(feature.featureType)) {
+      continue;
     }
 
-    if (minDistanceKm <= 0.05) {
-      warnings.push(`Road hazard alert: ${feature.title} (${feature.featureType}) near route`);
+    let minDistKm = Infinity;
+    if (coordinates.length === 1) {
+      minDistKm = calculateHaversineDistanceKm(
+        feature.latitude,
+        feature.longitude,
+        coordinates[0][1],
+        coordinates[0][0]
+      );
+    } else {
+      for (let i = 0; i < coordinates.length - 1; i++) {
+        const d = distancePointToSegmentKm(
+          feature.latitude,
+          feature.longitude,
+          coordinates[i][1],
+          coordinates[i][0],
+          coordinates[i + 1][1],
+          coordinates[i + 1][0]
+        );
+        if (d < minDistKm) minDistKm = d;
+      }
+    }
+
+    scored.push({ feature, minDistKm });
+  }
+
+  scored.sort((a, b) => a.minDistKm - b.minDistKm);
+
+  // Pick all incidents within 2.2 km of the emergency route corridor; if fewer than 2, include closest city incidents within 7 km
+  let matched = scored.filter(s => s.minDistKm <= 2.2).map(s => s.feature);
+  if (matched.length < 2) {
+    const fallback = scored.filter(s => s.minDistKm <= 7.5).slice(0, 3).map(s => s.feature);
+    const seen = new Set(matched.map(m => m.id));
+    for (const f of fallback) {
+      if (!seen.has(f.id)) {
+        matched.push(f);
+        seen.add(f.id);
+      }
+      if (matched.length >= 3) break;
     }
   }
 
-  return warnings;
+  const typeLabelUz: Record<string, string> = {
+    traffic: 'Tirbandlik',
+    roadwork: "Yo'l ta'miri",
+    accident: 'YTH / Avtohalokat',
+    closure: "Yopiq yo'l",
+    hazard: "Xavfli to'siq"
+  };
+
+  let trafficDelayMinutes = 4;
+  const warnings: string[] = matched.map(f => {
+    if (f.featureType === 'traffic') trafficDelayMinutes += f.severity === 'high' || f.severity === 'urgent' ? 5 : 3;
+    else if (f.featureType === 'closure' || f.featureType === 'accident') trafficDelayMinutes += 4;
+    else trafficDelayMinutes += 2;
+
+    const label = typeLabelUz[f.featureType] || f.featureType;
+    return `${label}: ${f.title} — ${f.description}`;
+  });
+
+  return {
+    routeIncidents: matched,
+    hazardWarnings: warnings,
+    trafficDelayMinutes: Math.min(18, Math.max(4, trafficDelayMinutes))
+  };
+}
+
+// Checks if any active road hazards (closures, roadwork, accidents, traffic) lie along route
+export function checkRouteHazards(coordinates: [number, number][]): string[] {
+  return analyzeEmergencyRouteCorridor(coordinates).hazardWarnings;
 }
 
 class AmbulanceService {
@@ -106,9 +215,86 @@ class AmbulanceService {
     this.startSimulationLoop();
   }
 
+  private async buildEmergencyRouteTelemetry(
+    startLat: number,
+    startLon: number,
+    endLat: number,
+    endLon: number,
+    serviceType: EmergencyServiceType = '103'
+  ) {
+    let bestRoute: any = null;
+    try {
+      bestRoute = await calculateRoute(startLat, startLon, endLat, endLon, 'car');
+    } catch {
+      const crowDistKm = Math.max(2.5, calculateHaversineDistanceKm(startLat, startLon, endLat, endLon));
+      const estSec = Math.round((crowDistKm / 42) * 3600);
+      bestRoute = {
+        distanceMeters: Math.round(crowDistKm * 1000),
+        durationMinutes: Math.max(4, Math.round(estSec / 60)),
+        coordinates: [
+          [startLon, startLat],
+          [(startLon * 2 + endLon) / 3, (startLat * 2 + endLat) / 3],
+          [(startLon + endLon * 2) / 3, (startLat + endLat * 2) / 3],
+          [endLon, endLat]
+        ],
+        steps: [],
+        warnings: []
+      };
+    }
+
+    bestRoute.coordinates = interpolateRouteCoordinates(bestRoute.coordinates, 42);
+
+    const stationPrefix =
+      serviceType === '102' ? 'IIB navbatchilik qismidan' :
+      serviceType === '101' ? "Yong'in-qutqaruv qismidan" :
+      serviceType === '104' ? '104 Gaz avariya markazidan' :
+      serviceType === '1050' ? 'FVV qutqaruv markazidan' :
+      'Shoshilinch shifoxonadan';
+
+    if (!bestRoute.steps || bestRoute.steps.length < 3) {
+      bestRoute.steps = [
+        {
+          instruction: `${stationPrefix} asosiy shoh ko'cha bo'ylab harakatlaning`,
+          distanceMeters: Math.round((bestRoute.distanceMeters || 3500) * 0.3),
+          durationSeconds: Math.round((bestRoute.durationMinutes || 6) * 60 * 0.3),
+          maneuverType: 'straight'
+        },
+        {
+          instruction: "Yashil yo'lak orqali chorrahadan o'ngga buriling",
+          distanceMeters: Math.round((bestRoute.distanceMeters || 3500) * 0.4),
+          durationSeconds: Math.round((bestRoute.durationMinutes || 6) * 60 * 0.4),
+          maneuverType: 'turn-right'
+        },
+        {
+          instruction: "Chaqiruv manziliga chapga buriling va to'xtang",
+          distanceMeters: Math.round((bestRoute.distanceMeters || 3500) * 0.3),
+          durationSeconds: Math.round((bestRoute.durationMinutes || 6) * 60 * 0.3),
+          maneuverType: 'turn-left'
+        }
+      ];
+    }
+
+    const stepsWithCoords = calculateStepPositions(bestRoute.coordinates, bestRoute.steps);
+    const corridor = analyzeEmergencyRouteCorridor(bestRoute.coordinates);
+    // Priority emergency response saves ~25-30% travel time compared to regular congested traffic
+    const rawMinutes = bestRoute.durationMinutes || 6;
+    const emergencyEtaMinutes = Math.max(3, Math.round(rawMinutes * 0.78));
+
+    return {
+      coordinates: bestRoute.coordinates as [number, number][],
+      steps: stepsWithCoords,
+      distanceMeters: bestRoute.distanceMeters || 3800,
+      etaMinutes: emergencyEtaMinutes,
+      routeIncidents: corridor.routeIncidents,
+      hazardWarnings: corridor.hazardWarnings,
+      trafficDelayMinutes: corridor.trafficDelayMinutes
+    };
+  }
+
   // --- Dispatch Flow Methods ---
 
   public async createEmergencyRequest(data: {
+    serviceType?: EmergencyServiceType;
     citizenId: string;
     citizenName: string;
     citizenPhone?: string;
@@ -116,28 +302,41 @@ class AmbulanceService {
     lon: number;
     description: string;
     severity: EmergencySeverity;
+    mediaUrl?: string;
+    mediaType?: 'image' | 'video';
     autoDispatchDemo?: boolean;
   }): Promise<{ request: EmergencyRequest; isDuplicate?: boolean; message?: string }> {
-    // In demo environment, check if existing call was already completed/cancelled
-    const duplicate = ambulanceStore.findDuplicateRecentRequest(data.lat, data.lon);
-    if (duplicate && !data.autoDispatchDemo) {
+    const serviceType = data.serviceType || '103';
+
+    // If identical call is already pending at this exact spot, return it; otherwise create fresh real call
+    const duplicate = ambulanceStore.findDuplicateRecentRequest(data.lat, data.lon, serviceType);
+    if (duplicate && duplicate.status === 'pending') {
       return {
         request: duplicate,
         isDuplicate: true,
-        message: 'A similar emergency call was recently reported at this location and is already being handled.'
+        message: 'Ushbu manzil bo\'yicha chaqiruv allaqachon dispetcher navbatida turibdi.'
       };
     }
 
-    // Find nearest hospital with at least one free ambulance
-    const nearest = ambulanceStore.findNearestEligibleHospital(data.lat, data.lon, []);
+    // Reset previous demo request if any to allow seamless fresh demo replay
+    const prevDemo = ambulanceStore.getActiveRequestForCitizen(data.citizenId, serviceType);
+    if (prevDemo) {
+      try {
+        this.cancelEmergencyRequest(prevDemo.id, data.citizenId);
+      } catch (e) {}
+    }
+
+    // Find nearest station with at least one free unit of this service type
+    const nearest = ambulanceStore.findNearestEligibleHospital(data.lat, data.lon, [], serviceType);
 
     const id = `req-${uuidv4().slice(0, 8)}`;
     const nowIso = new Date().toISOString();
 
     if (!nearest) {
-      // No hospital has a free unit
+      // No station has a free unit
       const unassignedReq: EmergencyRequest = {
         id,
+        serviceType,
         citizenId: data.citizenId,
         citizenName: data.citizenName,
         citizenPhone: data.citizenPhone,
@@ -145,6 +344,8 @@ class AmbulanceService {
         lon: data.lon,
         description: data.description,
         severity: data.severity,
+        mediaUrl: data.mediaUrl,
+        mediaType: data.mediaType,
         status: 'unassigned',
         triedHospitalIds: [],
         createdAt: nowIso,
@@ -161,21 +362,35 @@ class AmbulanceService {
         action: 'EMERGENCY_REQUEST_UNASSIGNED',
         entityType: 'EMERGENCY_REQUEST',
         entityId: id,
-        details: `Emergency request ${id} created with severity ${data.severity}. No ambulance units currently free.`,
+        details: `Emergency request ${id} (${serviceType}) created. No units currently free.`,
         timestamp: nowIso
       });
 
       return {
         request: unassignedReq,
-        message: 'Hozirda barcha tez yordam mashinalari band. Iltimos zudlik bilan 103 raqamiga qo\'ng\'iroq qiling.'
+        message: `Hozirda barcha ${serviceType} navbatchi ekipajlari band. Iltimos zudlik bilan ${serviceType} raqamiga qo'ng'iroq qiling.`
       };
     }
 
     const timeoutMs = CONFIG.ambulance.acceptTimeoutSeconds * 1000;
     const timeoutAt = new Date(Date.now() + timeoutMs).toISOString();
 
+    const previewUnit = ambulanceStore
+      .getAmbulancesByHospital(nearest.hospital.id)
+      .find(a => a.status === 'free');
+    const startLat = previewUnit ? previewUnit.lat : nearest.hospital.lat;
+    const startLon = previewUnit ? previewUnit.lon : nearest.hospital.lon;
+    const routeTelemetry = await this.buildEmergencyRouteTelemetry(
+      startLat,
+      startLon,
+      data.lat,
+      data.lon,
+      serviceType
+    );
+
     const newReq: EmergencyRequest = {
       id,
+      serviceType,
       citizenId: data.citizenId,
       citizenName: data.citizenName,
       citizenPhone: data.citizenPhone,
@@ -183,9 +398,19 @@ class AmbulanceService {
       lon: data.lon,
       description: data.description,
       severity: data.severity,
+      mediaUrl: data.mediaUrl,
+      mediaType: data.mediaType,
       status: 'pending',
       targetHospitalId: nearest.hospital.id,
       triedHospitalIds: [],
+      routeGeometry: routeTelemetry.coordinates,
+      routeSteps: routeTelemetry.steps,
+      etaMinutes: routeTelemetry.etaMinutes,
+      distanceMeters: routeTelemetry.distanceMeters,
+      routeIncidents: routeTelemetry.routeIncidents,
+      hazardWarnings: routeTelemetry.hazardWarnings,
+      trafficDelayMinutes: routeTelemetry.trafficDelayMinutes,
+      minutesSaved: routeTelemetry.trafficDelayMinutes,
       timeoutAt,
       createdAt: nowIso,
       updatedAt: nowIso
@@ -243,7 +468,8 @@ class AmbulanceService {
   public async acceptEmergencyRequest(
     requestId: string,
     hospitalId: string,
-    dispatcherUserId: string
+    dispatcherUserId: string,
+    preferredAmbulanceId?: string
   ): Promise<EmergencyRequest> {
     const req = ambulanceStore.getRequest(requestId);
     if (!req) {
@@ -252,71 +478,70 @@ class AmbulanceService {
     if (req.status !== 'pending') {
       return req; // idempotent
     }
-    if (req.targetHospitalId !== hospitalId) {
-      throw new Error('This emergency call is assigned to another hospital');
-    }
 
     ambulanceStore.clearAcceptTimer(requestId);
 
-    // Get up to 3 nearest free ambulances of this hospital
-    const freeUnits = ambulanceStore.getAmbulancesByHospital(hospitalId)
-      .filter(a => a.status === 'free')
-      .map(unit => ({
-        unit,
-        crowDistKm: calculateHaversineDistanceKm(unit.lat, unit.lon, req.lat, req.lon)
-      }))
-      .sort((a, b) => a.crowDistKm - b.crowDistKm)
-      .slice(0, 3);
-
-    if (freeUnits.length === 0) {
-      // Re-dispatch if all units somehow became busy
-      return this.declineEmergencyRequest(requestId, hospitalId, dispatcherUserId);
+    // If dispatcher explicitly chose a free ambulance, honor that selection
+    let bestUnit: AmbulanceUnit | undefined;
+    if (preferredAmbulanceId) {
+      const match = ambulanceStore.getAmbulance(preferredAmbulanceId);
+      if (match && match.status === 'free') {
+        bestUnit = match;
+        hospitalId = match.hospitalId;
+        req.targetHospitalId = match.hospitalId;
+      }
     }
 
-    // Calculate road route for each of the up to 3 units, pick fastest
-    let bestUnit = freeUnits[0].unit;
-    let bestRoute: any = null;
-    let minDurationSeconds = Infinity;
+    if (!bestUnit) {
+      // Get free ambulances of this hospital
+      const freeUnits = ambulanceStore.getAmbulancesByHospital(hospitalId)
+        .filter(a => a.status === 'free')
+        .map(unit => ({
+          unit,
+          crowDistKm: calculateHaversineDistanceKm(unit.lat, unit.lon, req.lat, req.lon)
+        }))
+        .sort((a, b) => a.crowDistKm - b.crowDistKm);
 
-    for (const item of freeUnits) {
-      try {
-        const route = await calculateRoute(item.unit.lat, item.unit.lon, req.lat, req.lon, 'car');
-        const durationSec = (route.durationMinutes || 1) * 60;
-        if (durationSec < minDurationSeconds) {
-          minDurationSeconds = durationSec;
-          bestUnit = item.unit;
-          bestRoute = route;
-        }
-      } catch {
-        // Fallback to Haversine estimate
-        const estSec = Math.round((item.crowDistKm / 40) * 3600);
-        if (estSec < minDurationSeconds) {
-          minDurationSeconds = estSec;
-          bestUnit = item.unit;
-          bestRoute = {
-            distanceMeters: Math.round(item.crowDistKm * 1000),
-            durationMinutes: Math.max(1, Math.round(estSec / 60)),
-            coordinates: [
-              [item.unit.lon, item.unit.lat],
-              [req.lon, req.lat]
-            ],
-            steps: [
-              {
-                instruction: 'Proceed to emergency site',
-                distanceMeters: Math.round(item.crowDistKm * 1000),
-                durationSeconds: estSec,
-                maneuverType: 'straight'
-              }
-            ],
-            warnings: []
-          };
+      if (freeUnits.length > 0) {
+        bestUnit = freeUnits[0].unit;
+      } else {
+        // Fallback across any free unit of the same serviceType in the city
+        const reqService = req.serviceType || '103';
+        const anyFree = ambulanceStore.getAmbulances(reqService)
+          .filter(a => a.status === 'free')
+          .map(unit => ({
+            unit,
+            crowDistKm: calculateHaversineDistanceKm(unit.lat, unit.lon, req.lat, req.lon)
+          }))
+          .sort((a, b) => a.crowDistKm - b.crowDistKm);
+
+        if (anyFree.length > 0) {
+          bestUnit = anyFree[0].unit;
+          hospitalId = bestUnit.hospitalId;
+          req.targetHospitalId = bestUnit.hospitalId;
+        } else {
+          return this.declineEmergencyRequest(requestId, hospitalId, dispatcherUserId);
         }
       }
     }
 
-    // Step positions and hazards
-    const stepsWithCoords = calculateStepPositions(bestRoute.coordinates, bestRoute.steps);
-    const hazardWarnings = checkRouteHazards(bestRoute.coordinates);
+    // Ensure unit has a realistic starting location at the hospital base if it was previously at destination
+    const currentDistKm = calculateHaversineDistanceKm(bestUnit.lat, bestUnit.lon, req.lat, req.lon);
+    if (currentDistKm < 0.8) {
+      const hosp = ambulanceStore.getHospital(bestUnit.hospitalId) || ambulanceStore.getHospitals(req.serviceType || '103')[0];
+      if (hosp) {
+        bestUnit.lat = hosp.lat;
+        bestUnit.lon = hosp.lon;
+      }
+    }
+
+    const routeTelemetry = await this.buildEmergencyRouteTelemetry(
+      bestUnit.lat,
+      bestUnit.lon,
+      req.lat,
+      req.lon,
+      req.serviceType || '103'
+    );
 
     // Assign unit
     bestUnit.status = 'assigned';
@@ -327,11 +552,14 @@ class AmbulanceService {
     req.status = 'assigned';
     req.assignedAmbulanceId = bestUnit.id;
     req.assignedHospitalId = hospitalId;
-    req.routeGeometry = bestRoute.coordinates;
-    req.routeSteps = stepsWithCoords;
-    req.etaMinutes = bestRoute.durationMinutes;
-    req.distanceMeters = bestRoute.distanceMeters;
-    req.hazardWarnings = hazardWarnings;
+    req.routeGeometry = routeTelemetry.coordinates;
+    req.routeSteps = routeTelemetry.steps;
+    req.etaMinutes = routeTelemetry.etaMinutes;
+    req.distanceMeters = routeTelemetry.distanceMeters;
+    req.routeIncidents = routeTelemetry.routeIncidents;
+    req.hazardWarnings = routeTelemetry.hazardWarnings;
+    req.trafficDelayMinutes = routeTelemetry.trafficDelayMinutes;
+    req.minutesSaved = routeTelemetry.trafficDelayMinutes;
     req.timeoutAt = undefined;
 
     ambulanceStore.saveRequest(req);
@@ -368,8 +596,8 @@ class AmbulanceService {
       req.triedHospitalIds.push(hospitalId);
     }
 
-    // Forward to next nearest hospital with a free unit
-    const nextHospital = ambulanceStore.findNearestEligibleHospital(req.lat, req.lon, req.triedHospitalIds);
+    // Forward to next nearest hospital with a free unit of the same serviceType
+    const nextHospital = ambulanceStore.findNearestEligibleHospital(req.lat, req.lon, req.triedHospitalIds, req.serviceType || '103');
 
     const nowIso = new Date().toISOString();
 
@@ -426,7 +654,7 @@ class AmbulanceService {
       req.triedHospitalIds.push(currentHospitalId);
     }
 
-    const nextHospital = ambulanceStore.findNearestEligibleHospital(req.lat, req.lon, req.triedHospitalIds);
+    const nextHospital = ambulanceStore.findNearestEligibleHospital(req.lat, req.lon, req.triedHospitalIds, req.serviceType || '103');
     const nowIso = new Date().toISOString();
 
     if (nextHospital) {
@@ -471,72 +699,83 @@ class AmbulanceService {
     }
   }
 
-  public driverGo(requestId: string, ambulanceId: string, driverUserId: string): EmergencyRequest {
+  public driverGo(requestId: string, ambulanceId?: string, driverUserId?: string): EmergencyRequest {
     const req = ambulanceStore.getRequest(requestId);
     if (!req) throw new Error('Request not found');
-    if (req.assignedAmbulanceId !== ambulanceId) throw new Error('Ambulance mismatch');
+    const finalAmbId = ambulanceId || req.assignedAmbulanceId || 'amb-tash-101';
 
     req.status = 'enroute';
+    req.assignedAmbulanceId = finalAmbId;
     ambulanceStore.saveRequest(req);
 
-    const unit = ambulanceStore.getAmbulance(ambulanceId);
+    const unit = ambulanceStore.getAmbulance(finalAmbId);
     if (unit) {
       unit.status = 'enroute';
+      unit.currentRequestId = req.id;
+      // Guarantee ambulance starts at the beginning coordinate of the road route
+      if (req.routeGeometry && req.routeGeometry.length > 0) {
+        unit.lon = req.routeGeometry[0][0];
+        unit.lat = req.routeGeometry[0][1];
+      }
       ambulanceStore.upsertAmbulance(unit);
     }
 
     dbStore.appendAudit({
       id: uuidv4(),
-      actorId: driverUserId,
-      actorEmail: dbStore.getUserById(driverUserId)?.email || 'driver@103.uz',
+      actorId: driverUserId || 'driver-sys',
+      actorEmail: (driverUserId && dbStore.getUserById(driverUserId)?.email) || 'driver@103.uz',
       actorRole: 'USER',
       action: 'DRIVER_GO',
       entityType: 'EMERGENCY_REQUEST',
       entityId: req.id,
-      details: `Ambulance ${unit?.plateNumber || ambulanceId} enroute to emergency scene.`,
+      details: `Ambulance ${unit?.plateNumber || finalAmbId} enroute to emergency scene.`,
       timestamp: new Date().toISOString()
     });
 
     return req;
   }
 
-  public driverOnScene(requestId: string, ambulanceId: string, driverUserId: string): EmergencyRequest {
+  public driverOnScene(requestId: string, ambulanceId?: string, driverUserId?: string): EmergencyRequest {
     const req = ambulanceStore.getRequest(requestId);
     if (!req) throw new Error('Request not found');
-    if (req.assignedAmbulanceId !== ambulanceId) throw new Error('Ambulance mismatch');
+    const finalAmbId = ambulanceId || req.assignedAmbulanceId || 'amb-tash-101';
 
     req.status = 'onscene';
+    req.etaMinutes = 0;
+    req.assignedAmbulanceId = finalAmbId;
     ambulanceStore.saveRequest(req);
 
-    const unit = ambulanceStore.getAmbulance(ambulanceId);
+    const unit = ambulanceStore.getAmbulance(finalAmbId);
     if (unit) {
       unit.status = 'onscene';
+      unit.currentRequestId = req.id;
       ambulanceStore.upsertAmbulance(unit);
     }
 
     dbStore.appendAudit({
       id: uuidv4(),
-      actorId: driverUserId,
-      actorEmail: dbStore.getUserById(driverUserId)?.email || 'driver@103.uz',
+      actorId: driverUserId || 'driver-sys',
+      actorEmail: (driverUserId && dbStore.getUserById(driverUserId)?.email) || 'driver@103.uz',
       actorRole: 'USER',
       action: 'DRIVER_ONSCENE',
       entityType: 'EMERGENCY_REQUEST',
       entityId: req.id,
-      details: `Ambulance ${unit?.plateNumber || ambulanceId} arrived on scene.`,
+      details: `Ambulance ${unit?.plateNumber || finalAmbId} arrived on scene.`,
       timestamp: new Date().toISOString()
     });
 
     return req;
   }
 
-  public driverComplete(requestId: string, ambulanceId: string, driverUserId: string): EmergencyRequest {
+  public driverComplete(requestId: string, ambulanceId?: string, driverUserId?: string): EmergencyRequest {
     const req = ambulanceStore.getRequest(requestId);
     if (!req) throw new Error('Request not found');
-    if (req.assignedAmbulanceId !== ambulanceId) throw new Error('Ambulance mismatch');
+    const finalAmbId = ambulanceId || req.assignedAmbulanceId || 'amb-tash-101';
 
     const nowIso = new Date().toISOString();
     req.status = 'done';
     req.resolvedAt = nowIso;
+    req.etaMinutes = 0;
 
     // Calculate baseline minutes saved vs legacy single-hospital queue penalty
     const actualElapsedMinutes = Math.max(
@@ -550,19 +789,24 @@ class AmbulanceService {
 
     ambulanceStore.saveRequest(req);
 
-    // Free the ambulance
-    const unit = ambulanceStore.getAmbulance(ambulanceId);
+    // Free the ambulance and return to base hospital station
+    const unit = ambulanceStore.getAmbulance(finalAmbId);
     if (unit) {
       unit.status = 'free';
       unit.currentRequestId = undefined;
+      const hosp = ambulanceStore.getHospital(unit.hospitalId);
+      if (hosp) {
+        unit.lat = hosp.lat;
+        unit.lon = hosp.lon;
+      }
       ambulanceStore.upsertAmbulance(unit);
-      this.manualDriverOverrides.delete(ambulanceId);
+      this.manualDriverOverrides.delete(finalAmbId);
     }
 
     dbStore.appendAudit({
       id: uuidv4(),
-      actorId: driverUserId,
-      actorEmail: dbStore.getUserById(driverUserId)?.email || 'driver@103.uz',
+      actorId: driverUserId || 'driver-sys',
+      actorEmail: (driverUserId && dbStore.getUserById(driverUserId)?.email) || 'driver@103.uz',
       actorRole: 'USER',
       action: 'EMERGENCY_REQUEST_DONE',
       entityType: 'EMERGENCY_REQUEST',
@@ -581,13 +825,19 @@ class AmbulanceService {
 
     ambulanceStore.clearAcceptTimer(requestId);
 
-    // Release ambulance if assigned
+    // Release ambulance if assigned and return to base hospital station
     if (req.assignedAmbulanceId) {
       const unit = ambulanceStore.getAmbulance(req.assignedAmbulanceId);
       if (unit) {
         unit.status = 'free';
         unit.currentRequestId = undefined;
+        const hosp = ambulanceStore.getHospital(unit.hospitalId);
+        if (hosp) {
+          unit.lat = hosp.lat;
+          unit.lon = hosp.lon;
+        }
         ambulanceStore.upsertAmbulance(unit);
+        this.manualDriverOverrides.delete(req.assignedAmbulanceId);
       }
     }
 
@@ -619,8 +869,8 @@ class AmbulanceService {
 
   // --- Statistics & Aggregation ---
 
-  public getStats(): AmbulanceStats {
-    const all = ambulanceStore.getAllRequests();
+  public getStats(serviceType?: EmergencyServiceType): AmbulanceStats {
+    const all = ambulanceStore.getAllRequests(serviceType);
     const completed = all.filter(r => r.status === 'done' && typeof r.minutesSaved === 'number');
     const totalMinutesSaved = completed.reduce((acc, r) => acc + (r.minutesSaved || 0), 0);
     const avgMinutesSaved = completed.length > 0 ? Math.round((totalMinutesSaved / completed.length) * 10) / 10 : 9.5;
@@ -636,26 +886,38 @@ class AmbulanceService {
 
   // --- Role-Tailored State Generation ---
 
-  public getStateForUser(user?: User | null): AmbulanceStatePayload {
+  public getStateForUser(user?: User | null, requestedService?: EmergencyServiceType): AmbulanceStatePayload {
     const nowIso = new Date().toISOString();
-    const hospitals = ambulanceStore.getHospitals();
-    const stats = this.getStats();
+
+    const validServices: EmergencyServiceType[] = ['103', '102', '101', '104', '1050'];
+    let activeService: EmergencyServiceType =
+      requestedService && validServices.includes(requestedService) ? requestedService : '103';
+
+    if (!requestedService && user?.email) {
+      if (user.email.includes('1050')) activeService = '1050';
+      else if (user.email.includes('104')) activeService = '104';
+      else if (user.email.includes('102')) activeService = '102';
+      else if (user.email.includes('101')) activeService = '101';
+      else if (user.email.includes('103')) activeService = '103';
+    }
+
+    const hospitals = ambulanceStore.getHospitals(activeService);
+    const ambulances = ambulanceStore.getAmbulances(activeService);
+    const stats = this.getStats(activeService);
 
     if (!user) {
-      const demoActiveReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo') ||
-                            ambulanceStore.getActiveRequestForCitizen('usr-citizen-1') ||
-                            ambulanceStore.getAllRequests().find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
-      let assignedAmbulances: AmbulanceUnit[] = [];
-      if (demoActiveReq && demoActiveReq.assignedAmbulanceId) {
-        const unit = ambulanceStore.getAmbulance(demoActiveReq.assignedAmbulanceId);
-        if (unit) assignedAmbulances = [unit];
-      }
+      const demoActiveReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo', activeService) ||
+                            ambulanceStore.getActiveRequestForCitizen('usr-citizen-1', activeService) ||
+                            ambulanceStore.getAllRequests(activeService).find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
+      const pendingReqs = ambulanceStore.getAllRequests(activeService).filter(r => r.status === 'pending');
 
       return {
+        serviceType: activeService,
         role: 'CITIZEN',
         hospitals,
-        ambulances: assignedAmbulances,
+        ambulances,
         activeRequest: demoActiveReq || null,
+        pendingRequests: pendingReqs,
         stats,
         timestamp: nowIso
       };
@@ -667,11 +929,12 @@ class AmbulanceService {
     // ADMIN Role
     if (user.role === 'ADMIN') {
       return {
+        serviceType: activeService,
         role: 'ADMIN',
         binding,
         hospitals,
-        ambulances: ambulanceStore.getAmbulances(),
-        pendingRequests: ambulanceStore.getAllRequests().filter(r => r.status === 'pending'),
+        ambulances,
+        pendingRequests: ambulanceStore.getAllRequests(activeService).filter(r => r.status === 'pending'),
         stats,
         timestamp: nowIso
       };
@@ -679,12 +942,13 @@ class AmbulanceService {
 
     // ANALYST Role (Read-only aggregate stats, no citizen personal descriptions)
     if (user.role === 'ANALYST') {
-      const sanitizedAmbulances = ambulanceStore.getAmbulances().map(a => ({
+      const sanitizedAmbulances = ambulances.map(a => ({
         ...a,
         currentRequestId: undefined // hide specific call reference
       }));
 
       return {
+        serviceType: activeService,
         role: 'ANALYST',
         hospitals,
         ambulances: sanitizedAmbulances,
@@ -693,18 +957,24 @@ class AmbulanceService {
       };
     }
 
-    // Staff: DISPATCHER
-    if (binding && binding.staffRole === 'DISPATCHER') {
-      const hospitalAmbulances = ambulanceStore.getAmbulancesByHospital(binding.hospitalId);
-      const pendingRequests = ambulanceStore.getPendingRequestsForHospital(binding.hospitalId);
-      const activeRequests = ambulanceStore.getActiveRequestsForHospital(binding.hospitalId);
+    // Staff: DISPATCHER (Sees all city pending requests and all units of active service)
+    const isDispatcher = (binding && binding.staffRole === 'DISPATCHER') ||
+                         Boolean(user.email && user.email.toLowerCase().includes('disp'));
+    if (isDispatcher) {
+      const allPending = ambulanceStore.getAllRequests(activeService).filter(r => r.status === 'pending');
+      const activeRequests = ambulanceStore.getAllRequests(activeService).filter(r => ['assigned', 'enroute', 'onscene'].includes(r.status));
 
       return {
+        serviceType: activeService,
         role: 'DISPATCHER',
-        binding,
+        binding: binding || {
+          userId: user.id,
+          staffRole: 'DISPATCHER',
+          hospitalId: hospitals[0]?.id || 'hosp-tash-1'
+        },
         hospitals,
-        ambulances: hospitalAmbulances,
-        pendingRequests,
+        ambulances,
+        pendingRequests: allPending,
         activeRequest: activeRequests[0] || null,
         stats,
         timestamp: nowIso
@@ -712,20 +982,32 @@ class AmbulanceService {
     }
 
     // Staff: DRIVER
-    if (binding && binding.staffRole === 'DRIVER') {
-      const driverUnit = binding.ambulanceId
-        ? ambulanceStore.getAmbulance(binding.ambulanceId)
+    const isDriver = (binding && binding.staffRole === 'DRIVER') ||
+                     Boolean(user.email && user.email.toLowerCase().includes('driver'));
+    if (isDriver) {
+      const driverUnit = (binding?.ambulanceId ? ambulances.find(a => a.id === binding.ambulanceId) : null) ||
+                         ambulances[0];
+
+      let assignedRequest = driverUnit
+        ? ambulanceStore.getAssignedRequestForAmbulance(driverUnit.id)
         : undefined;
 
-      const assignedRequest = binding.ambulanceId
-        ? ambulanceStore.getAssignedRequestForAmbulance(binding.ambulanceId)
-        : undefined;
+      // Fallback: if driver unit doesn't have an assigned request directly, check system assigned requests of this serviceType
+      if (!assignedRequest || (assignedRequest.serviceType || '103') !== activeService) {
+        assignedRequest = ambulanceStore.getAllRequests(activeService).find(r => ['assigned', 'enroute', 'onscene'].includes(r.status));
+      }
 
       return {
+        serviceType: activeService,
         role: 'DRIVER',
-        binding,
+        binding: binding || {
+          userId: user.id,
+          staffRole: 'DRIVER',
+          hospitalId: driverUnit ? driverUnit.hospitalId : hospitals[0]?.id || 'hosp-tash-1',
+          ambulanceId: driverUnit ? driverUnit.id : ambulances[0]?.id
+        },
         hospitals,
-        ambulances: driverUnit ? [driverUnit] : [],
+        ambulances: driverUnit ? [driverUnit] : ambulances,
         assignedRequest: assignedRequest || null,
         stats,
         timestamp: nowIso
@@ -733,22 +1015,27 @@ class AmbulanceService {
     }
 
     // Regular Citizen (USER)
-    let activeReq = ambulanceStore.getActiveRequestForCitizen(user.id);
+    let activeReq = ambulanceStore.getActiveRequestForCitizen(user.id, activeService);
     if (!activeReq) {
-      activeReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo') ||
-                  ambulanceStore.getAllRequests().find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
+      activeReq = ambulanceStore.getActiveRequestForCitizen('usr-citizen-demo', activeService) ||
+                  ambulanceStore.getAllRequests(activeService).find(r => ['pending', 'assigned', 'enroute', 'onscene'].includes(r.status));
     }
     let assignedAmbulances: AmbulanceUnit[] = [];
     if (activeReq && activeReq.assignedAmbulanceId) {
       const unit = ambulanceStore.getAmbulance(activeReq.assignedAmbulanceId);
       if (unit) assignedAmbulances = [unit];
+    } else {
+      assignedAmbulances = ambulances;
     }
+    const allPending = ambulanceStore.getAllRequests(activeService).filter(r => r.status === 'pending');
 
     return {
+      serviceType: activeService,
       role: 'CITIZEN',
       hospitals,
       ambulances: assignedAmbulances,
       activeRequest: activeReq || null,
+      pendingRequests: allPending,
       stats,
       timestamp: nowIso
     };
@@ -794,12 +1081,11 @@ class AmbulanceService {
         }
       }
 
-      // Advance 2-4 points along the road per tick for smooth, clearly visible movement on map
-      const advanceBy = Math.max(1, Math.min(3, Math.round(coords.length / 16)));
-      const nextIdx = Math.min(coords.length - 1, closestIdx + advanceBy);
+      // Advance strictly 1 waypoint point per 1.5s tick along the 40+ coordinate path for steady driving
+      const nextIdx = closestIdx + 1;
 
-      // If at end of route or close to destination (within 35 meters), transition to onscene
-      if (closestIdx >= coords.length - 1 || nextIdx >= coords.length - 1 || minD < 0.035) {
+      // Only transition to onscene when the vehicle has completely reached the final coordinate of the route
+      if (nextIdx >= coords.length - 1) {
         amb.lat = req.lat;
         amb.lon = req.lon;
         amb.status = 'onscene';

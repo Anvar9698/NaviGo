@@ -69,9 +69,22 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  const isEmergencyRoute = [
+    '#/ambulance',
+    '#/police',
+    '#/fire',
+    '#/gas',
+    '#/rescue',
+    '#/103',
+    '#/102',
+    '#/101',
+    '#/104',
+    '#/1050'
+  ].includes(route);
+
   return (
     <AppProvider>
-      {route === '#/ambulance' ? <AmbulanceApp /> : <MainLayout />}
+      {isEmergencyRoute ? <AmbulanceApp /> : <MainLayout />}
     </AppProvider>
   );
 }

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Edit3, CheckCircle, XCircle, AlertTriangle, Send, X, Layers } from 'lucide-react';
+import { Edit3, CheckCircle, XCircle, AlertTriangle, Send, X, Layers, Trash2, Save } from 'lucide-react';
 import { Report, ProposedMapChange } from '@yol/shared';
 
 export const EditorWorkspace: React.FC = () => {
-  const { activeTab, setActiveTab, token, refreshData } = useApp();
+  const { activeTab, setActiveTab, token, refreshData, user } = useApp();
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [isProposing, setIsProposing] = useState(false);
@@ -13,6 +13,57 @@ export const EditorWorkspace: React.FC = () => {
   const [propTitle, setPropTitle] = useState('');
   const [propDesc, setPropDesc] = useState('');
   const [propType, setPropType] = useState<ProposedMapChange['changeType']>('add_hazard');
+
+  // Edit form fields for road engineer
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editSeverity, setEditSeverity] = useState<Report['severity']>('medium');
+
+  const handleDeleteReport = async (reportId: string) => {
+    if (!window.confirm("Haqiqatan ham bu xabarni va xaritadagi muammoni o'chirmoqchimisiz?")) return;
+    try {
+      const res = await fetch(`/api/v1/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        fetchReports();
+        refreshData();
+      } else {
+        alert("O'chirishda xatolik yuz berdi");
+      }
+    } catch (e) {
+      alert("Xatolik");
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingReport) return;
+    try {
+      const res = await fetch(`/api/v1/reports/${editingReport.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDesc,
+          severity: editSeverity
+        })
+      });
+      if (res.ok) {
+        setEditingReport(null);
+        fetchReports();
+        refreshData();
+      } else {
+        alert('Tahrirlashda xatolik yuz berdi');
+      }
+    } catch (e) {
+      alert('Xatolik');
+    }
+  };
 
   const fetchReports = async () => {
     if (!token) return;
@@ -35,7 +86,7 @@ export const EditorWorkspace: React.FC = () => {
     }
   }, [activeTab, token]);
 
-  if (activeTab !== 'editor') return null;
+  if (activeTab !== 'editor' || !user || (user.role !== 'EDITOR' && user.role !== 'ADMIN')) return null;
 
   const handleTriage = async (reportId: string, status: 'UNDER_REVIEW' | 'REJECTED' | 'APPROVED') => {
     try {
@@ -159,8 +210,28 @@ export const EditorWorkspace: React.FC = () => {
                 Coords: {r.latitude.toFixed(4)}, {r.longitude.toFixed(4)} • Urgency: {r.severity}
               </div>
 
-              {/* Editor Actions */}
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+              {/* Editor Actions: Direct Edit, Delete, and Review */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    setEditingReport(r);
+                    setEditTitle(r.title);
+                    setEditDesc(r.description);
+                    setEditSeverity(r.severity);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-bold transition-all"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Tahrirlash (Edit)</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteReport(r.id)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100 text-red-700 hover:bg-red-200 text-xs font-bold transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>O'chirish (Delete)</span>
+                </button>
+                <div className="flex-1" />
                 <button
                   onClick={() => handleTriage(r.id, 'UNDER_REVIEW')}
                   className="px-3 py-1.5 rounded-full bg-yellow-100 text-yellow-800 text-xs font-bold hover:bg-yellow-200"
@@ -177,13 +248,7 @@ export const EditorWorkspace: React.FC = () => {
                   className="px-3 py-1.5 rounded-full bg-blackPill text-white text-xs font-bold hover:bg-blackPillHover flex items-center gap-1"
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>Propose Map Change</span>
-                </button>
-                <button
-                  onClick={() => handleTriage(r.id, 'REJECTED')}
-                  className="px-3 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-bold hover:bg-red-200"
-                >
-                  Reject Report
+                  <span>Propose Official</span>
                 </button>
               </div>
             </div>
@@ -248,6 +313,71 @@ export const EditorWorkspace: React.FC = () => {
                   className="px-6 py-2 rounded-full bg-blackPill text-white text-xs font-bold hover:bg-blackPillHover"
                 >
                   Submit for Admin Approval
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Modal Sub-drawer: Road Engineer Direct Edit */}
+        {editingReport && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-lg bg-white dark:bg-darkCard rounded-card p-6 shadow-float border border-yolBorder dark:border-gray-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-textPrimary dark:text-darkText">
+                  Muammoni tahrirlash (Edit Report)
+                </h3>
+                <button onClick={() => setEditingReport(null)} className="text-textSecondary p-1">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-textSecondary block mb-1">Sarlavha (Title)</label>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-innerSoftArea dark:bg-gray-800 text-xs font-bold text-textPrimary dark:text-darkText border border-yolBorder dark:border-gray-700"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-textSecondary block mb-1">Tavsif (Description)</label>
+                <textarea
+                  rows={3}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-innerSoftArea dark:bg-gray-800 text-xs text-textPrimary dark:text-darkText border border-yolBorder dark:border-gray-700"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-textSecondary block mb-1">Xavf darajasi (Severity)</label>
+                <select
+                  value={editSeverity}
+                  onChange={(e) => setEditSeverity(e.target.value as any)}
+                  className="w-full p-2.5 rounded-xl bg-innerSoftArea dark:bg-gray-800 text-xs font-bold text-textPrimary dark:text-darkText border border-yolBorder dark:border-gray-700"
+                >
+                  <option value="low">Past (Low)</option>
+                  <option value="medium">O'rtacha (Medium)</option>
+                  <option value="high">Yuqori (High)</option>
+                  <option value="urgent">Shoshilinch (Urgent)</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  onClick={() => setEditingReport(null)}
+                  className="px-4 py-2 rounded-full text-xs font-bold text-textSecondary hover:text-textPrimary"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex items-center gap-1.5 px-6 py-2 rounded-full bg-blackPill text-white text-xs font-bold hover:bg-blackPillHover"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Saqlash (Save)</span>
                 </button>
               </div>
             </div>

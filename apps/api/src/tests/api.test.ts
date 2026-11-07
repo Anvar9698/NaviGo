@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { calculateHaversineDistanceKm, dbStore } from '../db/store';
+import { calculateRoute } from '../providers/routing.provider';
 import { canTriageReports, canProposeMapChanges, canApproveMapChanges } from '@yol/shared';
 
 describe('Spatial & Distance Verification', () => {
@@ -100,5 +101,60 @@ describe('Report-to-Map Safe Publication Pipeline', () => {
     assert.equal(rolledBack, true);
     const rolledBackFeature = dbStore.getMapFeatureById(approval!.publishedFeature.id);
     assert.equal(rolledBackFeature?.isActive, false);
+  });
+
+  it('instantly makes user-reported problems visible to all users, allowing editor and admin to edit or delete', () => {
+    // 1. Citizen reports problem on the road
+    const { report } = dbStore.createReport({
+      reporterId: 'usr-citizen-1',
+      category: 'hazard',
+      title: 'Oil spill on intersection',
+      description: 'Slippery asphalt near crosswalk',
+      latitude: 41.3500,
+      longitude: 69.2900,
+      severity: 'high'
+    });
+
+    // 2. Immediately visible in active map features without admin approval
+    const activeFeatures = dbStore.getActiveMapFeatures();
+    const publishedFeat = activeFeatures.find(f => f.linkedReportId === report.id);
+    assert.ok(publishedFeat, 'User-reported problem must be immediately active on the map for all users');
+    assert.equal(publishedFeat?.title, 'Oil spill on intersection');
+    assert.equal(publishedFeat?.source, 'Reported by people');
+
+    // 3. Road Engineer or Admin edits the problem
+    const updatedFeat = dbStore.updateMapFeature(publishedFeat!.id, {
+      title: 'Oil spill cleaned - road drying',
+      severity: 'low'
+    });
+    assert.equal(updatedFeat?.title, 'Oil spill cleaned - road drying');
+    assert.equal(updatedFeat?.severity, 'low');
+
+    // 4. Road Engineer or Admin deletes the problem from the map
+    const deleted = dbStore.deleteMapFeature(publishedFeat!.id);
+    assert.equal(deleted, true);
+
+    // Verify it is no longer in active map features
+    const remainingFeatures = dbStore.getActiveMapFeatures();
+    assert.equal(remainingFeatures.some(f => f.id === publishedFeat!.id), false);
+  });
+
+  it('returns corridor road incidents along A-to-B route and destination weather', async () => {
+    const route = await calculateRoute(
+      41.3111,
+      69.2797,
+      41.0097,
+      71.2289,
+      'car',
+      'Chust',
+      'Toshkent'
+    );
+
+    assert.equal(route.originName, 'Toshkent');
+    assert.equal(route.destinationName, 'Chust');
+    assert.ok(route.routeIncidents && route.routeIncidents.length >= 3, 'Should detect corridor incidents along A373 towards Chust');
+    assert.ok(route.destinationWeather, 'Should return destination weather');
+    assert.equal(route.destinationWeather?.city, 'Chust');
+    assert.ok(route.destinationAirQuality, 'Should return destination air quality');
   });
 });

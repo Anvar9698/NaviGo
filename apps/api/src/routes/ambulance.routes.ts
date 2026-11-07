@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { AmbulanceUnit, ApproachingEmergencyAlert } from '@yol/shared';
 import { requireAuth, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { createRateLimiter } from '../middleware/rate-limit.middleware';
 import { ambulanceService } from '../services/ambulance.service';
@@ -29,6 +30,20 @@ function requireStaffRole(role: 'DISPATCHER' | 'DRIVER' | 'ANY') {
       return res.status(403).json({ error: 'Forbidden', message: 'Editors have no access to ambulance dispatch' });
     }
 
+    const email = req.user.email?.toLowerCase() || '';
+    const isDriver = email.includes('driver');
+    const isDisp = email.includes('disp');
+
+    if (role === 'DRIVER' && isDriver) {
+      return next();
+    }
+    if (role === 'DISPATCHER' && isDisp) {
+      return next();
+    }
+    if (role === 'ANY' && (isDriver || isDisp)) {
+      return next();
+    }
+
     const binding = ambulanceStore.getBinding(req.user.id);
     if (!binding) {
       return res.status(403).json({ error: 'Forbidden', message: 'No ambulance staff binding found' });
@@ -53,29 +68,37 @@ function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFuncti
   next();
 }
 
-// 1. GET /state - Live polled state for the current user
+// 1. GET /state - Live polled state for the current user and emergency service
 ambulanceRouter.get('/state', (req: AuthenticatedRequest, res: Response) => {
   if (req.user?.role === 'EDITOR') {
-    return res.status(403).json({ error: 'Forbidden', message: 'Editors have no access to ambulance dispatch' });
+    return res.status(403).json({ error: 'Forbidden', message: 'Editors have no access to emergency dispatch' });
   }
 
-  const state = ambulanceService.getStateForUser(req.user);
+  const requestedService = (req.query.service as any) || undefined;
+  const state = ambulanceService.getStateForUser(req.user, requestedService);
   res.json(state);
 });
 
 // 2. GET /stats - Overall performance stats
 ambulanceRouter.get('/stats', (req: Request, res: Response) => {
-  const stats = ambulanceService.getStats();
+  const requestedService = (req.query.service as any) || undefined;
+  const stats = ambulanceService.getStats(requestedService);
   res.json(stats);
 });
 
-// 3. POST /requests - Citizen creates emergency request
+// 3. POST /requests - Citizen creates emergency request (103, 102, 101, 104, 1050)
 const createRequestSchema = z.object({
+  serviceType: z.enum(['103', '102', '101', '104', '1050']).optional().default('103'),
   lat: z.number().min(-90).max(90),
   lon: z.number().min(-180).max(180),
-  description: z.string().min(3).max(500),
-  severity: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-  citizenPhone: z.string().optional()
+  description: z.string().max(1000).optional().default(''),
+  severity: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(1),
+  citizenPhone: z.string().optional(),
+  citizenName: z.string().optional(),
+  citizenId: z.string().optional(),
+  mediaUrl: z.string().optional(),
+  mediaType: z.enum(['image', 'video']).optional(),
+  autoDispatchDemo: z.boolean().optional()
 });
 
 ambulanceRouter.post(
@@ -84,23 +107,36 @@ ambulanceRouter.post(
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       if (req.user?.role === 'EDITOR') {
-        return res.status(403).json({ error: 'Forbidden', message: 'Editors have no access to ambulance dispatch' });
+        return res.status(403).json({ error: 'Forbidden', message: 'Editors have no access to emergency dispatch' });
       }
 
       const parsed = createRequestSchema.parse(req.body);
 
-      const citizenId = req.user ? req.user.id : 'usr-citizen-demo';
-      const citizenName = req.user ? req.user.name : 'Fuqaro (Demo)';
+      const citizenId = req.user ? req.user.id : (parsed.citizenId || 'usr-citizen-demo');
+      const citizenName = req.user ? req.user.name : (parsed.citizenName || 'Fuqaro (Demo)');
+
+      const serviceType = parsed.serviceType || '103';
+      let desc = (parsed.description || '').trim();
+      if (!desc) {
+        if (serviceType === '101') desc = "101 Yong'in xavfsizligi shoshilinch chaqiruvi (Tezkor o't o'chirish)";
+        else if (serviceType === '102') desc = "102 Ichki ishlar tezkor chaqiruvi";
+        else if (serviceType === '104') desc = "104 Favqulodda gaz xizmati shoshilinch chaqiruvi (Gaz sizib chiqishi xavfi)";
+        else if (serviceType === '1050') desc = "1050 FVV Maxsus qutqaruv xizmati chaqiruvi";
+        else desc = "103 Tez tibbiy yordam chaqiruvi";
+      }
 
       const result = await ambulanceService.createEmergencyRequest({
+        serviceType,
         citizenId,
         citizenName,
         citizenPhone: parsed.citizenPhone,
         lat: parsed.lat,
         lon: parsed.lon,
-        description: parsed.description,
+        description: desc,
         severity: parsed.severity,
-        autoDispatchDemo: true
+        mediaUrl: parsed.mediaUrl,
+        mediaType: parsed.mediaType,
+        autoDispatchDemo: Boolean(req.body.autoDispatchDemo)
       });
 
       res.status(201).json(result);
@@ -150,7 +186,8 @@ ambulanceRouter.post(
       const updated = await ambulanceService.acceptEmergencyRequest(
         req.params.id,
         targetHospitalId,
-        req.user!.id
+        req.user!.id,
+        req.body.ambulanceId
       );
 
       res.json(updated);
@@ -197,11 +234,8 @@ ambulanceRouter.post(
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const binding = (req as any).staffBinding;
-      const ambulanceId = binding?.ambulanceId || req.body.ambulanceId;
-
-      if (!ambulanceId) {
-        return res.status(400).json({ error: 'BadRequest', message: 'Ambulance id required' });
-      }
+      const existing = ambulanceStore.getRequest(req.params.id);
+      const ambulanceId = req.body.ambulanceId || existing?.assignedAmbulanceId || binding?.ambulanceId || 'amb-tash-101';
 
       const updated = ambulanceService.driverGo(req.params.id, ambulanceId, req.user!.id);
       res.json(updated);
@@ -220,11 +254,8 @@ ambulanceRouter.post(
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const binding = (req as any).staffBinding;
-      const ambulanceId = binding?.ambulanceId || req.body.ambulanceId;
-
-      if (!ambulanceId) {
-        return res.status(400).json({ error: 'BadRequest', message: 'Ambulance id required' });
-      }
+      const existing = ambulanceStore.getRequest(req.params.id);
+      const ambulanceId = req.body.ambulanceId || existing?.assignedAmbulanceId || binding?.ambulanceId || 'amb-tash-101';
 
       const updated = ambulanceService.driverOnScene(req.params.id, ambulanceId, req.user!.id);
       res.json(updated);
@@ -235,19 +266,15 @@ ambulanceRouter.post(
   }
 );
 
-// 9. POST /requests/:id/complete - Driver finishes call
+// 9. POST /requests/:id/complete - Driver finishes call or Citizen confirms completion
 ambulanceRouter.post(
   '/requests/:id/complete',
   requireAuth,
-  requireStaffRole('DRIVER'),
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const binding = (req as any).staffBinding;
-      const ambulanceId = binding?.ambulanceId || req.body.ambulanceId;
-
-      if (!ambulanceId) {
-        return res.status(400).json({ error: 'BadRequest', message: 'Ambulance id required' });
-      }
+      const binding = (req as any).staffBinding || ambulanceStore.getBinding(req.user!.id);
+      const existing = ambulanceStore.getRequest(req.params.id);
+      const ambulanceId = req.body.ambulanceId || existing?.assignedAmbulanceId || binding?.ambulanceId || 'amb-tash-101';
 
       const updated = ambulanceService.driverComplete(req.params.id, ambulanceId, req.user!.id);
       res.json(updated);
@@ -314,12 +341,37 @@ ambulanceRouter.get('/units', requireAuth, (req: AuthenticatedRequest, res: Resp
   res.status(403).json({ error: 'Forbidden', message: 'Access denied' });
 });
 
-ambulanceRouter.post('/units', requireAuth, requireAdmin, (req: AuthenticatedRequest, res: Response) => {
-  const unit = ambulanceStore.upsertAmbulance(req.body);
-  res.json(unit);
+ambulanceRouter.post('/units', requireAuth, requireStaffRole('DISPATCHER'), (req: AuthenticatedRequest, res: Response) => {
+  const body = req.body;
+  const binding = (req as any).staffBinding || ambulanceStore.getBinding(req.user!.id);
+  const hospitalId = body.hospitalId || binding?.hospitalId || 'hosp-tash-1';
+  const hospital = ambulanceStore.getHospital(hospitalId);
+
+  const newUnit: AmbulanceUnit = {
+    id: body.id || `amb-${Date.now().toString().slice(-4)}`,
+    hospitalId,
+    serviceType: body.serviceType || hospital?.serviceType || '103',
+    plateNumber: body.plateNumber || '01 105 TAA',
+    lat: body.lat ?? (hospital?.lat || 41.2721),
+    lon: body.lon ?? (hospital?.lon || 69.2155),
+    baseLat: body.baseLat ?? (hospital?.lat || 41.2721),
+    baseLon: body.baseLon ?? (hospital?.lon || 69.2155),
+    status: 'free'
+  };
+
+  const unit = ambulanceStore.upsertAmbulance(newUnit);
+  res.status(201).json(unit);
 });
 
-ambulanceRouter.delete('/units/:id', requireAuth, requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+ambulanceRouter.delete('/units/:id', requireAuth, requireStaffRole('DISPATCHER'), (req: AuthenticatedRequest, res: Response) => {
+  const existing = ambulanceStore.getAmbulance(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ error: 'NotFound', message: 'Mashina topilmadi' });
+  }
+  if (existing.status !== 'free') {
+    return res.status(400).json({ error: 'BadRequest', message: 'Band yoki chaqiruvda bo\'lgan mashinani o\'chirib bo\'lmaydi' });
+  }
+
   const success = ambulanceStore.deleteAmbulance(req.params.id);
   res.json({ success });
 });
@@ -338,4 +390,113 @@ ambulanceRouter.delete('/bindings/:userId', requireAuth, requireAdmin, (req: Aut
   const success = ambulanceStore.deleteBinding(req.params.userId);
   res.json({ success });
 });
+
+// 13. V2X Green Corridor Alerts for Drivers & Municipalities
+let demoV2XAlert: ApproachingEmergencyAlert | null = null;
+let demoV2XTimer: any = null;
+
+ambulanceRouter.get('/v2x-alert', (req: Request, res: Response) => {
+  const userLat = parseFloat(req.query.lat as string);
+  const userLon = parseFloat(req.query.lon as string);
+
+  if (isNaN(userLat) || isNaN(userLon)) {
+    return res.json({ alert: null });
+  }
+
+  // Check if active demo alert is running
+  if (demoV2XAlert) {
+    return res.json({ alert: demoV2XAlert });
+  }
+
+  // Check real emergency units in enroute or assigned
+  const activeRequests = ambulanceStore.getAllRequests().filter(r => r.status === 'enroute' || r.status === 'assigned');
+  for (const r of activeRequests) {
+    if (!r.assignedAmbulanceId) continue;
+    const amb = ambulanceStore.getAmbulance(r.assignedAmbulanceId);
+    if (!amb) continue;
+
+    const dLat = (amb.lat - userLat) * (Math.PI / 180);
+    const dLon = (amb.lon - userLon) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(userLat * (Math.PI / 180)) *
+        Math.cos(amb.lat * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const distMeters = Math.round(6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+    if (distMeters <= 1200) {
+      const hosp = amb.hospitalId ? ambulanceStore.getHospital(amb.hospitalId) : undefined;
+      const serviceType = r.serviceType || '103';
+      const alert: ApproachingEmergencyAlert = {
+        id: `v2x-${r.id}`,
+        serviceType,
+        serviceTitle: serviceType === '101' ? "101 Yong'in xavfsizligi" : serviceType === '102' ? "102 Ichki ishlar (YPX)" : serviceType === '104' ? "104 Favqulodda Gaz" : serviceType === '1050' ? "1050 FVV Qutqaruv" : "103 Tez Yordam",
+        plateNumber: amb.plateNumber,
+        distanceMeters: distMeters,
+        direction: 'approaching_behind',
+        ambulanceLat: amb.lat,
+        ambulanceLon: amb.lon,
+        targetHospitalName: hosp?.name,
+        messageUz: `DIQQAT: ${serviceType} Tezkor xizmat orqangizdan ${distMeters}m masofada kelmoqda! Iltimos, o'ng qatorga o'ting va yo'l bering!`,
+        messageRu: `ВНИМАНИЕ: Спецтранспорт ${serviceType} приближается сзади (${distMeters}м)! Примите вправо и уступите дорогу!`,
+        messageEn: `ALERT: Emergency vehicle ${serviceType} approaching behind (${distMeters}m)! Please pull over to the right and yield!`,
+        isGreenCorridorActive: true
+      };
+      return res.json({ alert });
+    }
+  }
+
+  res.json({ alert: null });
+});
+
+ambulanceRouter.post('/demo-v2x', (req: Request, res: Response) => {
+  const userLat = typeof req.body.lat === 'number' ? req.body.lat : 41.3111;
+  const userLon = typeof req.body.lon === 'number' ? req.body.lon : 69.2797;
+  const serviceType = req.body.serviceType || '103';
+
+  if (demoV2XTimer) clearInterval(demoV2XTimer);
+
+  let currentDist = 480;
+  demoV2XAlert = {
+    id: `demo-v2x-${Date.now()}`,
+    serviceType,
+    serviceTitle: serviceType === '101' ? "101 Yong'in xavfsizligi" : serviceType === '102' ? "102 Ichki ishlar (YPX)" : serviceType === '104' ? "104 Favqulodda Gaz" : serviceType === '1050' ? "1050 FVV Qutqaruv" : "103 Tez Yordam",
+    plateNumber: '01 103 TAA',
+    distanceMeters: currentDist,
+    direction: 'approaching_behind',
+    ambulanceLat: userLat - 0.0035,
+    ambulanceLon: userLon - 0.0035,
+    targetHospitalName: "Respublika Shoshilinch Tibbiy Markazi (16)",
+    messageUz: `DIQQAT: ${serviceType} Tezkor xizmat orqangizdan ${currentDist}m masofada kelmoqda! Iltimos, o'ng qatorga o'ting va yo'l bering!`,
+    messageRu: `ВНИМАНИЕ: Спецтранспорт ${serviceType} приближается сзади (${currentDist}м)! Примите вправо и уступите дорогу!`,
+    messageEn: `ALERT: Emergency vehicle ${serviceType} approaching behind (${currentDist}m)! Please pull over to the right and yield!`,
+    isGreenCorridorActive: true
+  };
+
+  demoV2XTimer = setInterval(() => {
+    if (!demoV2XAlert) {
+      clearInterval(demoV2XTimer);
+      return;
+    }
+    currentDist -= 60;
+    if (currentDist <= 20) {
+      demoV2XAlert.direction = 'passed';
+      demoV2XAlert.distanceMeters = 0;
+      demoV2XAlert.messageUz = "103 Tez Yordam o'tib ketdi. Yashil yo'lak uchun rahmat!";
+      demoV2XAlert.messageRu = "Спецтранспорт 103 проехал. Спасибо за содействие!";
+      demoV2XAlert.messageEn = "103 Emergency vehicle passed. Thank you for yielding!";
+      setTimeout(() => {
+        demoV2XAlert = null;
+        clearInterval(demoV2XTimer);
+      }, 4000);
+    } else {
+      demoV2XAlert.distanceMeters = currentDist;
+      demoV2XAlert.messageUz = `DIQQAT: ${serviceType} Tezkor xizmat orqangizdan ${currentDist}m masofada kelmoqda! Iltimos, o'ng qatorga o'ting va yo'l bering!`;
+    }
+  }, 1200);
+
+  res.json({ success: true, alert: demoV2XAlert });
+});
+
 

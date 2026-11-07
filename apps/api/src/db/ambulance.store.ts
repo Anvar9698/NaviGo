@@ -7,7 +7,8 @@ import {
   EmergencyRequest,
   EmergencySeverity,
   EmergencyRequestStatus,
-  AmbulanceStats
+  AmbulanceStats,
+  EmergencyServiceType
 } from '@yol/shared';
 import { dbStore, calculateHaversineDistanceKm } from './store';
 import { CONFIG } from '../config';
@@ -24,50 +25,174 @@ class AmbulanceDataStore {
   }
 
   private seedInitialData() {
-    // 1. Seed Tashkent & Fergana Hospitals
+    // 1. Seed Tashkent & Fergana Stations (103 Medical, 102 Police, 101 Fire, 1050 Rescue)
     const seededHospitals: Hospital[] = [
-      // Tashkent
+      // --- 103: Tez Tibbiy Yordam (Medical Hospitals) ---
       {
         id: 'hosp-tash-1',
-        name: 'Republican Research Centre of Emergency Medicine (16-Gorbolnitsa)',
+        name: 'Respublika Shoshilinch Tibbiy Yordam Ilmiy Markazi (16-Gorbolnitsa)',
         type: 'state',
+        serviceType: '103',
         lat: 41.2721,
         lon: 69.2155,
         isDemo: true,
-        address: "Kichik Xalqa Yo'li 2, Chilanzar, Tashkent"
+        address: "Kichik Xalqa Yo'li 2, Chilonzor, Toshkent"
       },
       {
         id: 'hosp-tash-2',
-        name: 'Tashkent City 1st Clinical Emergency Hospital',
+        name: 'Toshkent shahar 1-son Klinik Shoshilinch Shifoxonasi',
         type: 'state',
+        serviceType: '103',
         lat: 41.3340,
         lon: 69.2845,
         isDemo: true,
-        address: "Farobiy ko'chasi 2, Olmazor, Tashkent"
+        address: "Farobiy ko'chasi 2, Olmazor, Toshkent"
       },
       {
         id: 'hosp-tash-3',
-        name: 'Tashkent Medical Academy Emergency Clinic',
+        name: 'Toshkent Tibbiyot Akademiyasi Shoshilinch Klinikasi',
         type: 'state',
+        serviceType: '103',
         lat: 41.3050,
         lon: 69.3400,
         isDemo: true,
-        address: "Farobiy 2, Yashnabad, Tashkent"
+        address: "Farobiy 2, Yashnobod, Toshkent"
       },
       {
         id: 'hosp-tash-4',
-        name: 'Shox Med Emergency Care (Private Clinic)',
+        name: 'Shox Med Shoshilinch Tibbiy Yordam (Xususiy)',
         type: 'private',
+        serviceType: '103',
         lat: 41.2850,
         lon: 69.2600,
         isDemo: true,
-        address: "Oybek 38, Mirabad, Tashkent"
+        address: "Oybek 38, Mirobod, Toshkent"
       },
-      // Fergana Region
+
+      // --- 102: Ichki Ishlar Organlari (Police & Public Safety) ---
+      {
+        id: 'dept-tash-102-1',
+        name: 'Toshkent shahar IIBB Tezkor Boshqaruv Markazi',
+        type: 'state',
+        serviceType: '102',
+        lat: 41.2985,
+        lon: 69.2785,
+        isDemo: true,
+        address: "Sayilgoh ko'chasi 9, Mirobod, Toshkent"
+      },
+      {
+        id: 'dept-tash-102-2',
+        name: 'Chilonzor tumani IIB 2-sonli Ichki Ishlar Bo\'limi',
+        type: 'state',
+        serviceType: '102',
+        lat: 41.2780,
+        lon: 69.2080,
+        isDemo: true,
+        address: "Cho'ponota ko'chasi 42, Chilonzor, Toshkent"
+      },
+      {
+        id: 'dept-tash-102-3',
+        name: 'Olmazor tumani IIB Patrul-Post Xizmati Maskani',
+        type: 'state',
+        serviceType: '102',
+        lat: 41.3410,
+        lon: 69.2290,
+        isDemo: true,
+        address: "Kichik Xalqa Yo'li 18, Olmazor, Toshkent"
+      },
+
+      // --- 101: Davlat Yong'in Xavfsizligi Xizmati (Fire & Rescue) ---
+      {
+        id: 'fire-tash-101-1',
+        name: 'Toshkent shahar FVB 1-Yong\'in-Qutqaruv Qismi (Chilonzor)',
+        type: 'state',
+        serviceType: '101',
+        lat: 41.2825,
+        lon: 69.2190,
+        isDemo: true,
+        address: "Bunyodkor shoh ko'chasi 15, Chilonzor, Toshkent"
+      },
+      {
+        id: 'fire-tash-101-2',
+        name: 'Toshkent shahar FVB 4-Yong\'in-Qutqaruv Qismi (Shayxontohur)',
+        type: 'state',
+        serviceType: '101',
+        lat: 41.3210,
+        lon: 69.2450,
+        isDemo: true,
+        address: "Navoiy ko'chasi 32, Shayxontohur, Toshkent"
+      },
+      {
+        id: 'fire-tash-101-3',
+        name: 'Toshkent shahar FVB 7-Yong\'in-Qutqaruv Qismi (Mirobod)',
+        type: 'state',
+        serviceType: '101',
+        lat: 41.2910,
+        lon: 69.2820,
+        isDemo: true,
+        address: "Nukus ko'chasi 71, Mirobod, Toshkent"
+      },
+
+      // --- 104: Favqulodda Gaz Xizmati ("Hududgaz Poytaxt" Avariya-Dispetcherlik Xizmati) ---
+      {
+        id: 'gas-tash-104-1',
+        name: '"Hududgaz Poytaxt" Markaziy Avariya-Dispetcherlik Xizmati (104 Markazi)',
+        type: 'state',
+        serviceType: '104',
+        lat: 41.2945,
+        lon: 69.2285,
+        isDemo: true,
+        address: "Muqimiy ko'chasi 98, Chilonzor, Toshkent"
+      },
+      {
+        id: 'gas-tash-104-2',
+        name: 'Yunusobod Tumani Gaz Ta\'minoti Avariya Xizmati (104 Bo\'limi)',
+        type: 'state',
+        serviceType: '104',
+        lat: 41.3480,
+        lon: 69.2860,
+        isDemo: true,
+        address: "Amir Temur shoh ko'chasi 112, Yunusobod, Toshkent"
+      },
+      {
+        id: 'gas-tash-104-3',
+        name: 'Yashnobod va Mirobod Tumanlararo 104 Avariya Guruhi',
+        type: 'state',
+        serviceType: '104',
+        lat: 41.2880,
+        lon: 69.3140,
+        isDemo: true,
+        address: "Farg'ona yo'li ko'chasi 25, Yashnobod, Toshkent"
+      },
+
+      // --- 1050: FVV Qutqaruv Xizmati (Disaster & Special Rescue) ---
+      {
+        id: 'fvv-tash-1050-1',
+        name: 'FVV Maxsus Vazifalar Bo\'yicha Respublika Qutqaruv Markazi',
+        type: 'state',
+        serviceType: '1050',
+        lat: 41.2750,
+        lon: 69.2310,
+        isDemo: true,
+        address: "Qatortol ko'chasi 60, Chilonzor, Toshkent"
+      },
+      {
+        id: 'fvv-tash-1050-2',
+        name: 'FVV Toshkent Shahar Qutqaruv Otryadi Tezkor Bo\'limi',
+        type: 'state',
+        serviceType: '1050',
+        lat: 41.3280,
+        lon: 69.2620,
+        isDemo: true,
+        address: "Sebzor ko'chasi 21, Olmazor, Toshkent"
+      },
+
+      // Fergana Region 103 Medical
       {
         id: 'hosp-ferg-1',
         name: 'Fergana Regional Emergency Medical Center',
         type: 'state',
+        serviceType: '103',
         lat: 40.3842,
         lon: 71.7843,
         isDemo: true,
@@ -77,65 +202,22 @@ class AmbulanceDataStore {
         id: 'hosp-ferg-2',
         name: 'Margilan City Emergency Department',
         type: 'state',
+        serviceType: '103',
         lat: 40.4722,
         lon: 71.7134,
         isDemo: true,
         address: "Mustaqillik ko'chasi 12, Margilan"
-      },
-      {
-        id: 'hosp-ferg-3',
-        name: 'Kokand City Emergency Medical Center',
-        type: 'state',
-        lat: 40.5283,
-        lon: 70.9426,
-        isDemo: true,
-        address: "Turkiston ko'chasi 28, Kokand"
-      },
-      {
-        id: 'hosp-ferg-4',
-        name: 'Quvasoy City Central Hospital',
-        type: 'state',
-        lat: 40.2974,
-        lon: 71.9723,
-        isDemo: true,
-        address: "Ziyokorlar 5, Quvasoy"
-      },
-      {
-        id: 'hosp-ferg-5',
-        name: 'Rishton District Medical Association',
-        type: 'state',
-        lat: 40.3582,
-        lon: 71.2831,
-        isDemo: true,
-        address: "Farg'ona yo'li 1, Rishton"
-      },
-      {
-        id: 'hosp-ferg-6',
-        name: 'Oltiariq District Central Hospital',
-        type: 'state',
-        lat: 40.4000,
-        lon: 71.5000,
-        isDemo: true,
-        address: "Ipak yo'li 77, Oltiariq"
-      },
-      {
-        id: 'hosp-ferg-7',
-        name: 'Fergana Med Line Emergency Clinic (Private)',
-        type: 'private',
-        lat: 40.3890,
-        lon: 71.7780,
-        isDemo: true,
-        address: "B. Marg'inoniy 15, Fergana"
       }
     ];
     seededHospitals.forEach(h => this.hospitals.set(h.id, h));
 
-    // 2. Seed Ambulances for each hospital
+    // 2. Seed Response Vehicles for each service
     const seededAmbulances: AmbulanceUnit[] = [
-      // Tashkent 1
+      // --- 103 Medical Ambulances ---
       {
         id: 'amb-tash-101',
         hospitalId: 'hosp-tash-1',
+        serviceType: '103',
         plateNumber: '01 103 TAA',
         lat: 41.2721,
         lon: 69.2155,
@@ -146,6 +228,7 @@ class AmbulanceDataStore {
       {
         id: 'amb-tash-102',
         hospitalId: 'hosp-tash-1',
+        serviceType: '103',
         plateNumber: '01 104 TAA',
         lat: 41.2725,
         lon: 69.2160,
@@ -153,10 +236,10 @@ class AmbulanceDataStore {
         baseLon: 69.2155,
         status: 'free'
       },
-      // Tashkent 2
       {
         id: 'amb-tash-201',
         hospitalId: 'hosp-tash-2',
+        serviceType: '103',
         plateNumber: '01 201 TBA',
         lat: 41.3340,
         lon: 69.2845,
@@ -164,123 +247,146 @@ class AmbulanceDataStore {
         baseLon: 69.2845,
         status: 'free'
       },
+
+      // --- 102 Police Patrol Units (Ichki Ishlar) ---
       {
-        id: 'amb-tash-202',
-        hospitalId: 'hosp-tash-2',
-        plateNumber: '01 202 TBA',
-        lat: 41.3342,
-        lon: 69.2850,
-        baseLat: 41.3340,
-        baseLon: 69.2845,
+        id: 'pol-tash-101',
+        hospitalId: 'dept-tash-102-1',
+        serviceType: '102',
+        plateNumber: '01 102 PPA',
+        lat: 41.2985,
+        lon: 69.2785,
+        baseLat: 41.2985,
+        baseLon: 69.2785,
         status: 'free'
       },
-      // Tashkent 3
       {
-        id: 'amb-tash-301',
-        hospitalId: 'hosp-tash-3',
-        plateNumber: '01 301 TCA',
-        lat: 41.3050,
-        lon: 69.3400,
-        baseLat: 41.3050,
-        baseLon: 69.3400,
+        id: 'pol-tash-102',
+        hospitalId: 'dept-tash-102-2',
+        serviceType: '102',
+        plateNumber: '01 104 PPA',
+        lat: 41.2780,
+        lon: 69.2080,
+        baseLat: 41.2780,
+        baseLon: 69.2080,
         status: 'free'
       },
-      // Tashkent 4
       {
-        id: 'amb-tash-401',
-        hospitalId: 'hosp-tash-4',
-        plateNumber: '01 401 TDA',
-        lat: 41.2850,
-        lon: 69.2600,
-        baseLat: 41.2850,
-        baseLon: 69.2600,
+        id: 'pol-tash-103',
+        hospitalId: 'dept-tash-102-3',
+        serviceType: '102',
+        plateNumber: '01 106 PPA',
+        lat: 41.3410,
+        lon: 69.2290,
+        baseLat: 41.3410,
+        baseLon: 69.2290,
         status: 'free'
       },
-      // Fergana 1
+
+      // --- 101 Fire & Rescue Trucks (Yong'in Xavfsizligi) ---
+      {
+        id: 'fire-tash-101',
+        hospitalId: 'fire-tash-101-1',
+        serviceType: '101',
+        plateNumber: '01 101 FVV',
+        lat: 41.2825,
+        lon: 69.2190,
+        baseLat: 41.2825,
+        baseLon: 69.2190,
+        status: 'free'
+      },
+      {
+        id: 'fire-tash-102',
+        hospitalId: 'fire-tash-101-2',
+        serviceType: '101',
+        plateNumber: '01 103 FVV',
+        lat: 41.3210,
+        lon: 69.2450,
+        baseLat: 41.3210,
+        baseLon: 69.2450,
+        status: 'free'
+      },
+      {
+        id: 'fire-tash-103',
+        hospitalId: 'fire-tash-101-3',
+        serviceType: '101',
+        plateNumber: '01 107 FVV',
+        lat: 41.2910,
+        lon: 69.2820,
+        baseLat: 41.2910,
+        baseLon: 69.2820,
+        status: 'free'
+      },
+
+      // --- 104 Emergency Gas Service Vehicles (Favqulodda Gaz Xizmati) ---
+      {
+        id: 'gas-tash-101',
+        hospitalId: 'gas-tash-104-1',
+        serviceType: '104',
+        plateNumber: '01 104 GAZ',
+        lat: 41.2945,
+        lon: 69.2285,
+        baseLat: 41.2945,
+        baseLon: 69.2285,
+        status: 'free'
+      },
+      {
+        id: 'gas-tash-102',
+        hospitalId: 'gas-tash-104-2',
+        serviceType: '104',
+        plateNumber: '01 105 GAZ',
+        lat: 41.3480,
+        lon: 69.2860,
+        baseLat: 41.3480,
+        baseLon: 69.2860,
+        status: 'free'
+      },
+      {
+        id: 'gas-tash-103',
+        hospitalId: 'gas-tash-104-3',
+        serviceType: '104',
+        plateNumber: '01 106 GAZ',
+        lat: 41.2880,
+        lon: 69.3140,
+        baseLat: 41.2880,
+        baseLon: 69.3140,
+        status: 'free'
+      },
+
+      // --- 1050 Disaster Rescue Vehicles (FVV Maxsus Qutqaruv) ---
+      {
+        id: 'res-tash-101',
+        hospitalId: 'fvv-tash-1050-1',
+        serviceType: '1050',
+        plateNumber: '01 1050 FVV',
+        lat: 41.2750,
+        lon: 69.2310,
+        baseLat: 41.2750,
+        baseLon: 69.2310,
+        status: 'free'
+      },
+      {
+        id: 'res-tash-102',
+        hospitalId: 'fvv-tash-1050-2',
+        serviceType: '1050',
+        plateNumber: '01 1052 FVV',
+        lat: 41.3280,
+        lon: 69.2620,
+        baseLat: 41.3280,
+        baseLon: 69.2620,
+        status: 'free'
+      },
+
+      // Fergana 103
       {
         id: 'amb-ferg-101',
         hospitalId: 'hosp-ferg-1',
+        serviceType: '103',
         plateNumber: '40 101 FAA',
         lat: 40.3842,
         lon: 71.7843,
         baseLat: 40.3842,
         baseLon: 71.7843,
-        status: 'free'
-      },
-      {
-        id: 'amb-ferg-102',
-        hospitalId: 'hosp-ferg-1',
-        plateNumber: '40 102 FAA',
-        lat: 40.3845,
-        lon: 71.7848,
-        baseLat: 40.3842,
-        baseLon: 71.7843,
-        status: 'free'
-      },
-      // Fergana 2
-      {
-        id: 'amb-ferg-201',
-        hospitalId: 'hosp-ferg-2',
-        plateNumber: '40 201 FBA',
-        lat: 40.4722,
-        lon: 71.7134,
-        baseLat: 40.4722,
-        baseLon: 71.7134,
-        status: 'free'
-      },
-      // Fergana 3
-      {
-        id: 'amb-ferg-301',
-        hospitalId: 'hosp-ferg-3',
-        plateNumber: '40 301 FCA',
-        lat: 40.5283,
-        lon: 70.9426,
-        baseLat: 40.5283,
-        baseLon: 70.9426,
-        status: 'free'
-      },
-      // Fergana 4
-      {
-        id: 'amb-ferg-401',
-        hospitalId: 'hosp-ferg-4',
-        plateNumber: '40 401 FDA',
-        lat: 40.2974,
-        lon: 71.9723,
-        baseLat: 40.2974,
-        baseLon: 71.9723,
-        status: 'free'
-      },
-      // Fergana 5
-      {
-        id: 'amb-ferg-501',
-        hospitalId: 'hosp-ferg-5',
-        plateNumber: '40 501 FEA',
-        lat: 40.3582,
-        lon: 71.2831,
-        baseLat: 40.3582,
-        baseLon: 71.2831,
-        status: 'free'
-      },
-      // Fergana 6
-      {
-        id: 'amb-ferg-601',
-        hospitalId: 'hosp-ferg-6',
-        plateNumber: '40 601 FFA',
-        lat: 40.4000,
-        lon: 71.5000,
-        baseLat: 40.4000,
-        baseLon: 71.5000,
-        status: 'free'
-      },
-      // Fergana 7
-      {
-        id: 'amb-ferg-701',
-        hospitalId: 'hosp-ferg-7',
-        plateNumber: '40 701 FGA',
-        lat: 40.3890,
-        lon: 71.7780,
-        baseLat: 40.3890,
-        baseLon: 71.7780,
         status: 'free'
       }
     ];
@@ -303,23 +409,89 @@ class AmbulanceDataStore {
       return u;
     };
 
-    const dispTash = ensureUser('dispatcher@103.uz', 'Dilshod Aliyev (Tashkent 103 Dispatcher)');
-    const driverTash = ensureUser('driver@103.uz', 'Rustam Qodirov (Ambulance Driver #101)');
+    // 103 Staff
+    const disp103 = ensureUser('dispatcher@103.uz', 'Dilshod Aliyev (103 Tibbiyot Dispetcheri)');
+    const driver103 = ensureUser('driver@103.uz', 'Rustam Qodirov (103 Haydovchi #101)');
+
+    // 102 Staff
+    const disp102 = ensureUser('dispatcher@102.uz', 'Otabek Zokirov (102 IIB Navbatchi Dispetcher)');
+    const driver102 = ensureUser('driver@102.uz', 'Sherzod Jo\'rayev (102 Patrul Haydovchisi #102)');
+
+    // 101 Staff
+    const disp101 = ensureUser('dispatcher@101.uz', 'Jasur Rahimov (101 Yong\'in-Qutqaruv Dispetcheri)');
+    const driver101 = ensureUser('driver@101.uz', 'Anvar Karimov (101 O\'t O\'chirish Ekipaji #101)');
+
+    // 104 Staff
+    const disp104 = ensureUser('dispatcher@104.uz', 'Sardor Toshmatov (104 Gaz Avariya Dispetcheri)');
+    const driver104 = ensureUser('driver@104.uz', 'Ulug\'bek Xolmatov (104 Gaz Avariya Ekipaji #104)');
+
+    // 1050 Staff
+    const disp1050 = ensureUser('dispatcher@1050.uz', 'Temur Soliyev (1050 FVV Qutqaruv Dispetcheri)');
+    const driver1050 = ensureUser('driver@1050.uz', 'Farhod Nazarov (1050 FVV Qutqaruvchi Haydovchi #1050)');
+
+    // Fergana
     const dispFerg = ensureUser('dispatcher-fergana@103.uz', 'Malika Yusupova (Fergana 103 Dispatcher)');
     const driverFerg = ensureUser('driver-fergana@103.uz', 'Bobur Turgunov (Fergana Ambulance Driver #201)');
 
-    // 4. Bind staff
-    this.bindings.set(dispTash.id, {
-      userId: dispTash.id,
+    // 4. Bind staff to respective departments and emergency vehicles
+    this.bindings.set(disp103.id, {
+      userId: disp103.id,
       staffRole: 'DISPATCHER',
       hospitalId: 'hosp-tash-1'
     });
-
-    this.bindings.set(driverTash.id, {
-      userId: driverTash.id,
+    this.bindings.set(driver103.id, {
+      userId: driver103.id,
       staffRole: 'DRIVER',
       hospitalId: 'hosp-tash-1',
       ambulanceId: 'amb-tash-101'
+    });
+
+    this.bindings.set(disp102.id, {
+      userId: disp102.id,
+      staffRole: 'DISPATCHER',
+      hospitalId: 'dept-tash-102-1'
+    });
+    this.bindings.set(driver102.id, {
+      userId: driver102.id,
+      staffRole: 'DRIVER',
+      hospitalId: 'dept-tash-102-1',
+      ambulanceId: 'pol-tash-101'
+    });
+
+    this.bindings.set(disp101.id, {
+      userId: disp101.id,
+      staffRole: 'DISPATCHER',
+      hospitalId: 'fire-tash-101-1'
+    });
+    this.bindings.set(driver101.id, {
+      userId: driver101.id,
+      staffRole: 'DRIVER',
+      hospitalId: 'fire-tash-101-1',
+      ambulanceId: 'fire-tash-101'
+    });
+
+    this.bindings.set(disp104.id, {
+      userId: disp104.id,
+      staffRole: 'DISPATCHER',
+      hospitalId: 'gas-tash-104-1'
+    });
+    this.bindings.set(driver104.id, {
+      userId: driver104.id,
+      staffRole: 'DRIVER',
+      hospitalId: 'gas-tash-104-1',
+      ambulanceId: 'gas-tash-101'
+    });
+
+    this.bindings.set(disp1050.id, {
+      userId: disp1050.id,
+      staffRole: 'DISPATCHER',
+      hospitalId: 'fvv-tash-1050-1'
+    });
+    this.bindings.set(driver1050.id, {
+      userId: driver1050.id,
+      staffRole: 'DRIVER',
+      hospitalId: 'fvv-tash-1050-1',
+      ambulanceId: 'res-tash-101'
     });
 
     this.bindings.set(dispFerg.id, {
@@ -327,7 +499,6 @@ class AmbulanceDataStore {
       staffRole: 'DISPATCHER',
       hospitalId: 'hosp-ferg-1'
     });
-
     this.bindings.set(driverFerg.id, {
       userId: driverFerg.id,
       staffRole: 'DRIVER',
@@ -337,8 +508,10 @@ class AmbulanceDataStore {
   }
 
   // --- Hospital Methods ---
-  public getHospitals(): Hospital[] {
-    return Array.from(this.hospitals.values());
+  public getHospitals(serviceType?: EmergencyServiceType): Hospital[] {
+    const list = Array.from(this.hospitals.values());
+    if (!serviceType) return list;
+    return list.filter(h => (h.serviceType || '103') === serviceType);
   }
 
   public getHospital(id: string): Hospital | undefined {
@@ -355,8 +528,10 @@ class AmbulanceDataStore {
   }
 
   // --- Ambulance Methods ---
-  public getAmbulances(): AmbulanceUnit[] {
-    return Array.from(this.ambulances.values());
+  public getAmbulances(serviceType?: EmergencyServiceType): AmbulanceUnit[] {
+    const list = Array.from(this.ambulances.values());
+    if (!serviceType) return list;
+    return list.filter(a => (a.serviceType || '103') === serviceType);
   }
 
   public getAmbulance(id: string): AmbulanceUnit | undefined {
@@ -409,15 +584,19 @@ class AmbulanceDataStore {
     return this.requests.get(id);
   }
 
-  public getAllRequests(): EmergencyRequest[] {
-    return Array.from(this.requests.values()).sort(
+  public getAllRequests(serviceType?: EmergencyServiceType): EmergencyRequest[] {
+    const list = Array.from(this.requests.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+    if (!serviceType) return list;
+    return list.filter(r => (r.serviceType || '103') === serviceType);
   }
 
-  public getActiveRequestForCitizen(citizenId: string): EmergencyRequest | undefined {
+  public getActiveRequestForCitizen(citizenId: string, serviceType?: EmergencyServiceType): EmergencyRequest | undefined {
     return Array.from(this.requests.values()).find(
-      r => r.citizenId === citizenId && !['done', 'cancelled'].includes(r.status)
+      r => r.citizenId === citizenId &&
+           (!serviceType || (r.serviceType || '103') === serviceType) &&
+           !['done', 'cancelled'].includes(r.status)
     );
   }
 
@@ -440,10 +619,11 @@ class AmbulanceDataStore {
     );
   }
 
-  public findDuplicateRecentRequest(lat: number, lon: number): EmergencyRequest | undefined {
+  public findDuplicateRecentRequest(lat: number, lon: number, serviceType: EmergencyServiceType = '103'): EmergencyRequest | undefined {
     const now = Date.now();
     const fiveMinutesMs = 5 * 60 * 1000;
     return Array.from(this.requests.values()).find(r => {
+      if ((r.serviceType || '103') !== serviceType) return false;
       if (['done', 'cancelled'].includes(r.status)) return false;
       const createdTime = new Date(r.createdAt).getTime();
       if (now - createdTime > fiveMinutesMs) return false;
@@ -455,10 +635,11 @@ class AmbulanceDataStore {
   public findNearestEligibleHospital(
     lat: number,
     lon: number,
-    triedHospitalIds: string[] = []
+    triedHospitalIds: string[] = [],
+    serviceType: EmergencyServiceType = '103'
   ): { hospital: Hospital; distanceKm: number } | null {
     const candidates = Array.from(this.hospitals.values()).filter(
-      h => !triedHospitalIds.includes(h.id)
+      h => (h.serviceType || '103') === serviceType && !triedHospitalIds.includes(h.id)
     );
 
     let nearest: { hospital: Hospital; distanceKm: number } | null = null;

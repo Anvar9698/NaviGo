@@ -8,7 +8,8 @@ import {
   Activity, 
   Users, 
   FileText, 
-  X 
+  X,
+  Trash2 
 } from 'lucide-react';
 import { ProposedMapChange, AuditLogEntry, User } from '@yol/shared';
 
@@ -57,7 +58,7 @@ export const AdminConsole: React.FC = () => {
     }
   }, [activeTab, token]);
 
-  if (activeTab !== 'admin') return null;
+  if (activeTab !== 'admin' || !user || user.role !== 'ADMIN') return null;
 
   const handleApprove = async (id: string) => {
     try {
@@ -108,6 +109,23 @@ export const AdminConsole: React.FC = () => {
       }
     } catch (e) {
       alert('Rollback failed');
+    }
+  };
+
+  const handleDeleteFeature = async (featureId: string) => {
+    if (!confirm('Haqiqatan ham bu muammoni butunlay o\'chirmoqchimisiz?')) return;
+    try {
+      const res = await fetch(`/api/v1/map/features/${featureId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        refreshData();
+      } else {
+        alert('O\'chirishda xatolik yuz berdi');
+      }
+    } catch (e) {
+      alert('Xatolik');
     }
   };
 
@@ -247,13 +265,23 @@ export const AdminConsole: React.FC = () => {
                       {feat.description}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleRollback(feat.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-innerSoftArea hover:bg-statusDangerBg hover:text-statusDanger text-xs font-bold border border-gray-300 dark:border-gray-600 transition-colors"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Rollback</span>
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => handleDeleteFeature(feat.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold transition-colors"
+                      title="O'chirish"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>O'chirish</span>
+                    </button>
+                    <button
+                      onClick={() => handleRollback(feat.id)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-innerSoftArea hover:bg-statusDangerBg hover:text-statusDanger text-xs font-bold border border-gray-300 dark:border-gray-600 transition-colors"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Rollback</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

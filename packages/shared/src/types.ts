@@ -154,6 +154,7 @@ export interface RouteStep {
 }
 
 export interface RouteResult {
+  originName?: string;
   destinationName?: string;
   distanceMeters: number;
   durationMinutes: number;
@@ -163,4 +164,7 @@ export interface RouteResult {
   warnings: string[];
   nearbyRoads?: string[];
   nearbyIncidentsCount?: number;
+  routeIncidents?: MapFeature[];
+  destinationWeather?: WeatherData;
+  destinationAirQuality?: AirQualityData;
 }

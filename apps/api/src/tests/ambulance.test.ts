@@ -178,4 +178,39 @@ describe('Ambulance 103 Dispatch Rules & Service Logic', () => {
     const citizenState = ambulanceService.getStateForUser(citizenUser);
     assert.equal(citizenState.role, 'CITIZEN');
   });
+
+  it('supports all 5 emergency services (103, 102, 101, 104, 1050) independently with immediate ETA and route traffic/road problems', async () => {
+    const services = ['103', '102', '101', '104', '1050'] as const;
+
+    for (const svc of services) {
+      const hospitals = ambulanceStore.getHospitals(svc);
+      const units = ambulanceStore.getAmbulances(svc);
+      assert.ok(hospitals.length >= 2, `Service ${svc} should have dedicated stations`);
+      assert.ok(units.length >= 2, `Service ${svc} should have dedicated fleet vehicles`);
+
+      const callRes = await ambulanceService.createEmergencyRequest({
+        serviceType: svc,
+        citizenId: `usr-cit-${svc}`,
+        citizenName: `Citizen ${svc}`,
+        lat: 41.3050,
+        lon: 69.2550,
+        description: `Emergency test call for service ${svc}`,
+        severity: 1
+      });
+
+      const req = callRes.request;
+      assert.equal(req.serviceType, svc);
+      assert.equal(req.status, 'pending');
+      assert.ok(typeof req.etaMinutes === 'number' && req.etaMinutes > 0, `Service ${svc} must compute ETA immediately`);
+      assert.ok(typeof req.distanceMeters === 'number' && req.distanceMeters > 0, `Service ${svc} must compute distance immediately`);
+      assert.ok(Array.isArray(req.routeIncidents) && req.routeIncidents.length > 0, `Service ${svc} must attach corridor road problems & traffic jams`);
+      assert.ok(Array.isArray(req.hazardWarnings) && req.hazardWarnings.length > 0, `Service ${svc} must attach hazard warnings`);
+      assert.ok(typeof req.trafficDelayMinutes === 'number' && req.trafficDelayMinutes > 0, `Service ${svc} must attach traffic delay minutes`);
+
+      const state = ambulanceService.getStateForUser(null, svc);
+      assert.equal(state.serviceType, svc);
+      assert.ok(state.hospitals.every(h => (h.serviceType || '103') === svc), `State hospitals must belong only to ${svc}`);
+      assert.ok(state.ambulances.every(a => (a.serviceType || '103') === svc), `State units must belong only to ${svc}`);
+    }
+  });
 });
