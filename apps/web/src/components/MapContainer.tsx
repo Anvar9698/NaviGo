@@ -238,11 +238,18 @@ export const MapContainer: React.FC<{ variant?: 'default' | 'bare' }> = ({ varia
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    const osmTiles = [
-      'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    ];
+    // Reliable, free, fast CDN tile servers (CartoDB Positron / OSM mirrors that allow web domains and Codespaces without 403 block)
+    const osmTiles = theme === 'dark'
+      ? [
+          'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+          'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+          'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'
+        ]
+      : [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'
+        ];
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
