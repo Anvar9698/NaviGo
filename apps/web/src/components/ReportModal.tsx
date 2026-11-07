@@ -58,9 +58,9 @@ export const ReportModal: React.FC = () => {
 
     if (!mapInstanceRef.current) {
       const osmTiles = [
-        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+        'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png'
       ];
 
       const map = new maplibregl.Map({
