@@ -221,6 +221,9 @@ export const LeftPanel: React.FC = () => {
     airQuality, 
     features, 
     userCoords,
+    setUserCoords,
+    locationStatus,
+    setLocationStatus,
     setIsListAlternative,
     activeRoute,
     setActiveRoute,
@@ -460,6 +463,23 @@ export const LeftPanel: React.FC = () => {
     setDestinationCoords(null);
     setSearchQuery('');
     setIsSearchFocused(false);
+  };
+
+  const handleGetGpsWeather = () => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          setUserCoords(coords);
+          setLocationStatus('granted');
+          setFocusedLocation(coords);
+        },
+        () => {
+          setLocationStatus('denied');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
   };
 
   const formatDurationText = (minutes: number) => {
@@ -1136,11 +1156,26 @@ export const LeftPanel: React.FC = () => {
         <>
           {/* 3. Weather & Air Quality Card */}
           <div className="bg-white dark:bg-darkCard p-5 rounded-card shadow-soft border border-yolBorder dark:border-darkBorder">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-xs tracking-wider text-textSecondary dark:text-darkTextSec uppercase">
-                {weather ? `${weather.city}, ${weather.country}` : 'Tashkent, Uzbekistan'}
-              </span>
-              <span className="text-[11px] text-textSecondary dark:text-darkTextSec flex items-center gap-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                <span className="font-bold text-xs tracking-wider text-textPrimary dark:text-darkText uppercase truncate">
+                  {weather ? `${weather.city}, ${weather.country}` : 'Toshkent, O‘zbekiston'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleGetGpsWeather}
+                  title={locale === 'ru' ? 'Определить погоду по GPS' : locale === 'en' ? 'Get weather for my location' : 'Mening joylashuvimdagi ob-havo'}
+                  className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-black flex items-center gap-1 transition-all ${
+                    locationStatus === 'granted'
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 hover:bg-blue-200'
+                      : 'bg-orange-100 text-accentOrange dark:bg-orange-950/50 hover:bg-orange-200 animate-pulse'
+                  }`}
+                >
+                  <NavIcon className="w-2.5 h-2.5 fill-current" />
+                  {locationStatus === 'granted' ? 'GPS' : (locale === 'ru' ? 'Мой GPS' : locale === 'en' ? 'My GPS' : 'Mening hududim')}
+                </button>
+              </div>
+              <span className="text-[11px] text-textSecondary dark:text-darkTextSec flex items-center gap-1 shrink-0">
                 <Clock className="w-3 h-3 text-accentOrange" />
                 10 {t('weather.updatedMinutesAgo')}
               </span>
@@ -1155,8 +1190,15 @@ export const LeftPanel: React.FC = () => {
                   {weather ? weather.conditionText : 'Clear sky'}
                 </p>
               </div>
-              <div className="w-16 h-16 rounded-full bg-orangeTint dark:bg-opacity-20 flex items-center justify-center text-3xl">
-                ☀️
+              <div className="w-16 h-16 rounded-full bg-orangeTint dark:bg-opacity-20 flex items-center justify-center text-3xl select-none">
+                {weather?.weatherIcon === 'sun' ? '☀️' :
+                 weather?.weatherIcon === 'cloud-sun' ? '⛅' :
+                 weather?.weatherIcon === 'cloud' ? '☁️' :
+                 weather?.weatherIcon === 'cloud-fog' ? '🌫️' :
+                 weather?.weatherIcon === 'cloud-drizzle' ? '🌦️' :
+                 weather?.weatherIcon === 'cloud-rain' ? '🌧️' :
+                 weather?.weatherIcon === 'snowflake' ? '❄️' :
+                 weather?.weatherIcon === 'cloud-lightning' ? '⛈️' : '☀️'}
               </div>
             </div>
 

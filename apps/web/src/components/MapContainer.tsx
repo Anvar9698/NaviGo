@@ -1071,7 +1071,8 @@ export const MapContainer: React.FC<{ variant?: 'default' | 'bare' }> = ({ varia
         },
         () => {
           setLocationStatus('denied');
-        }
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
       );
     }
   };

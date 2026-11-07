@@ -79,12 +79,12 @@ mapRouter.delete('/features/:id', requireAuth, requireRole(['ADMIN', 'EDITOR']),
   return res.json({ message: 'Road feature successfully removed from public map.' });
 });
 
-// GET /api/v1/map/weather - Real Open-Meteo weather
+// GET /api/v1/map/weather - Real Open-Meteo weather with dynamic GPS location resolution
 mapRouter.get('/weather', async (req: Request, res: Response) => {
   try {
     const lat = req.query.lat ? parseFloat(req.query.lat as string) : CONFIG.defaultLocation.latitude;
     const lon = req.query.lon ? parseFloat(req.query.lon as string) : CONFIG.defaultLocation.longitude;
-    const city = (req.query.city as string) || CONFIG.defaultLocation.city;
+    const city = req.query.city ? (req.query.city as string) : undefined;
 
     const weather = await fetchWeatherData(lat, lon, city);
     return res.json(weather);

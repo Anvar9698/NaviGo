@@ -203,6 +203,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [approachingAlert, setApproachingAlert] = useState<ApproachingEmergencyAlert | null>(null);
   const lastSpokenAlertIdRef = React.useRef<string | null>(null);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && navigator.geolocation) {
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' as PermissionName }).then((status) => {
+          if (status.state === 'granted') {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                setUserCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+                setLocationStatus('granted');
+              },
+              () => {},
+              { enableHighAccuracy: true, timeout: 8000 }
+            );
+          }
+        }).catch(() => {});
+      }
+    }
+  }, []);
+
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
       id: 'notif-1',
