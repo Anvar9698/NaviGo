@@ -89,3 +89,8 @@ npm run dev
 - **SOS Emergency Suite:** [http://localhost:3000/#/ambulance](http://localhost:3000/#/ambulance)
 - **Backend API & OpenAPI Spec:** [http://localhost:4001/api/v1/openapi.json](http://localhost:4001/api/v1/openapi.json)
 - **Health Check:** [http://localhost:4001/health](http://localhost:4001/health)
+
+## Credits
+
+   Behruzbek Marufjonov
+   Anvar Sayfullaev
