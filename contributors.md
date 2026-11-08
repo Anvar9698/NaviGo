@@ -1,1 +1,0 @@
-Anvar Sayfullaev
